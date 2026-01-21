@@ -43,11 +43,11 @@ class Finalidad(Base):
     __tablename__ = "finalidades"
     
     id = Column(Integer, primary_key=True)
-    codigo = Column(String(10), unique=True)
+    codigo = Column(String(100), unique=True, nullable=True)  # Opcional, para compatibilidad
     nombre = Column(String(300), nullable=False)
     descripcion = Column(String(500))
     
     created_at = Column(DateTime, default=datetime.utcnow)
     
     def __repr__(self):
-        return f"<Finalidad {self.codigo}: {self.nombre}>"
+        return f"<Finalidad {self.nombre}>"

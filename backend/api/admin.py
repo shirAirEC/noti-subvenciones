@@ -107,19 +107,17 @@ async def populate_catalogs():
         
         if finalidades_data:
             for fin_data in finalidades_data:
-                # La API devuelve "descripcion" con formato similar
+                # La API solo devuelve "descripcion" (sin código separado)
                 descripcion = fin_data.get("descripcion", "")
-                partes = descripcion.split(" - ", 1)
-                codigo = partes[0].strip() if len(partes) > 0 else str(fin_data.get("id"))
-                nombre = partes[1].strip() if len(partes) > 1 else descripcion
                 
                 exists = db.query(Finalidad).filter(Finalidad.id == fin_data.get("id")).first()
                 
                 if not exists:
                     finalidad = Finalidad(
                         id=fin_data.get("id"),
-                        codigo=codigo,
-                        nombre=nombre
+                        codigo=None,  # No hay código en la API de BDNS
+                        nombre=descripcion,
+                        descripcion=descripcion
                     )
                     db.add(finalidad)
                     finalidades_count += 1
