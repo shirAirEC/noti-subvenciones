@@ -127,11 +127,12 @@ class BDNSService:
         Returns:
             Lista de finalidades
         """
-        endpoint = f"{self.base_url}/finalidades"
+        endpoint = f"{self.base_url}/finalidad"
+        params = {"vpd": "GE"}
         
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
-                response = await client.get(endpoint)
+                response = await client.get(endpoint, params=params)
                 response.raise_for_status()
                 data = response.json()
                 
@@ -149,11 +150,12 @@ class BDNSService:
         Returns:
             Lista de regiones
         """
-        endpoint = f"{self.base_url}/regiones"
+        endpoint = f"{self.base_url}/region"
+        params = {"vpd": "GE"}
         
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
-                response = await client.get(endpoint)
+                response = await client.get(endpoint, params=params)
                 response.raise_for_status()
                 data = response.json()
                 
