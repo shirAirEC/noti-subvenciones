@@ -127,7 +127,7 @@ class BDNSService:
         Returns:
             Lista de finalidades
         """
-        endpoint = f"{self.base_url}/finalidad"
+        endpoint = f"{self.base_url}/finalidades"
         params = {"vpd": "GE"}
         
         try:
@@ -150,7 +150,7 @@ class BDNSService:
         Returns:
             Lista de regiones
         """
-        endpoint = f"{self.base_url}/region"
+        endpoint = f"{self.base_url}/regiones"
         params = {"vpd": "GE"}
         
         try:
