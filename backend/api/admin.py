@@ -224,25 +224,55 @@ async def sync_subvenciones_manual():
     Forzar sincronización manual de subvenciones desde BDNS
     ⚠️ Esto ejecuta la tarea completa: obtener, guardar, crear eventos y notificar
     """
+    from tasks.sync_subvenciones import fetch_subvenciones_bdns, guardar_subvenciones, crear_eventos_calendar, enviar_notificaciones
+    
+    db = SessionLocal()
+    
     try:
-        from tasks.sync_subvenciones import sync_subvenciones_task
-        
+        logger.info("=" * 80)
         logger.info("🔄 Iniciando sincronización manual de subvenciones...")
+        logger.info("=" * 80)
         
-        # Ejecutar la tarea de sincronización
-        sync_subvenciones_task()
+        # 1. Obtener subvenciones de BDNS
+        nuevas_subvenciones = await fetch_subvenciones_bdns(db)
+        
+        if not nuevas_subvenciones:
+            logger.info("ℹ️  No se encontraron nuevas subvenciones")
+            return {
+                "status": "success",
+                "message": "No se encontraron nuevas subvenciones"
+            }
+        
+        logger.info(f"✓ {len(nuevas_subvenciones)} nuevas subvenciones obtenidas")
+        
+        # 2. Guardar en base de datos
+        subvenciones_guardadas = guardar_subvenciones(db, nuevas_subvenciones)
+        logger.info(f"✓ {len(subvenciones_guardadas)} subvenciones guardadas en BD")
+        
+        # 3. Crear eventos en Google Calendar
+        crear_eventos_calendar(subvenciones_guardadas)
+        
+        # 4. Enviar notificaciones a usuarios
+        enviar_notificaciones(db, subvenciones_guardadas)
+        
+        logger.info("=" * 80)
+        logger.info("✅ Sincronización completada exitosamente")
+        logger.info("=" * 80)
         
         return {
             "status": "success",
-            "message": "Sincronización completada. Revisa los logs para más detalles."
+            "message": f"Sincronización completada: {len(subvenciones_guardadas)} subvenciones procesadas"
         }
         
     except Exception as e:
-        logger.error(f"Error en sincronización manual: {e}")
+        logger.error(f"❌ Error en sincronización: {e}")
+        db.rollback()
         return {
             "status": "error",
             "message": f"Error: {str(e)}"
         }
+    finally:
+        db.close()
 
 
 @router.get("/status")
