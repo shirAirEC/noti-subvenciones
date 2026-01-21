@@ -65,18 +65,18 @@ async def populate_catalogs():
         
         # Poblar regiones
         logger.info("Obteniendo regiones desde BDNS...")
-        regiones_data = bdns.obtener_regiones()
+        regiones_data = await bdns.get_regiones()
         
         if regiones_data:
             for region_data in regiones_data:
                 # Verificar si ya existe
                 exists = db.query(Region).filter(
-                    Region.codigo == region_data.get('code')
+                    Region.codigo == str(region_data.get('code'))
                 ).first()
                 
                 if not exists:
                     region = Region(
-                        codigo=region_data.get('code'),
+                        codigo=str(region_data.get('code')),
                         nombre=region_data.get('description')
                     )
                     db.add(region)
@@ -84,45 +84,51 @@ async def populate_catalogs():
             db.commit()
             logger.info(f"✓ {len(regiones_data)} regiones cargadas")
         
-        # Poblar áreas temáticas
-        logger.info("Obteniendo áreas temáticas desde BDNS...")
-        areas_data = bdns.obtener_areas_tematicas()
-        
-        if areas_data:
-            for area_data in areas_data:
-                exists = db.query(AreaTematica).filter(
-                    AreaTematica.codigo == area_data.get('code')
-                ).first()
-                
-                if not exists:
-                    area = AreaTematica(
-                        codigo=area_data.get('code'),
-                        nombre=area_data.get('description')
-                    )
-                    db.add(area)
-            
-            db.commit()
-            logger.info(f"✓ {len(areas_data)} áreas temáticas cargadas")
-        
         # Poblar finalidades
         logger.info("Obteniendo finalidades desde BDNS...")
-        finalidades_data = bdns.obtener_finalidades()
+        finalidades_data = await bdns.get_finalidades()
         
         if finalidades_data:
             for fin_data in finalidades_data:
                 exists = db.query(Finalidad).filter(
-                    Finalidad.codigo == fin_data.get('code')
+                    Finalidad.codigo == str(fin_data.get('code'))
                 ).first()
                 
                 if not exists:
                     finalidad = Finalidad(
-                        codigo=fin_data.get('code'),
+                        codigo=str(fin_data.get('code')),
                         nombre=fin_data.get('description')
                     )
                     db.add(finalidad)
             
             db.commit()
             logger.info(f"✓ {len(finalidades_data)} finalidades cargadas")
+        
+        # Para áreas temáticas, usamos las finalidades como proxy
+        # (BDNS no tiene un endpoint específico de áreas temáticas)
+        logger.info("Creando áreas temáticas predefinidas...")
+        areas_predefinidas = [
+            {"codigo": "1", "nombre": "Investigación Científica"},
+            {"codigo": "2", "nombre": "Desarrollo Tecnológico"},
+            {"codigo": "3", "nombre": "Innovación Empresarial"},
+            {"codigo": "4", "nombre": "Formación e Investigadores"},
+            {"codigo": "5", "nombre": "Infraestructuras Científicas"},
+        ]
+        
+        for area_data in areas_predefinidas:
+            exists = db.query(AreaTematica).filter(
+                AreaTematica.codigo == area_data['codigo']
+            ).first()
+            
+            if not exists:
+                area = AreaTematica(
+                    codigo=area_data['codigo'],
+                    nombre=area_data['nombre']
+                )
+                db.add(area)
+        
+        db.commit()
+        logger.info(f"✓ {len(areas_predefinidas)} áreas temáticas cargadas")
         
         # Contar registros
         total_regiones = db.query(Region).count()
