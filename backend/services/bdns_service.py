@@ -79,10 +79,14 @@ class BDNSService:
                 response = await client.get(endpoint, params=params)
                 response.raise_for_status()
                 data = response.json()
+                # Normalizar respuesta de BDNS: usa "content" en busquedas
+                if "convocatorias" not in data and "content" in data:
+                    data["convocatorias"] = data.get("content", [])
+                total_elementos = data.get("totalElementos", data.get("totalElements", 0))
                 
                 logger.info(
                     f"BDNS API: Obtenidas {len(data.get('convocatorias', []))} convocatorias "
-                    f"(página {page}, total: {data.get('totalElementos', 0)})"
+                    f"(página {page}, total: {total_elementos})"
                 )
                 
                 return data
