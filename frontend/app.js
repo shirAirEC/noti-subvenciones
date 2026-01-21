@@ -175,7 +175,10 @@ function showMessage(message, type) {
  * Realizar petición a la API
  */
 async function fetchAPI(endpoint, options = {}) {
-    const url = `${API_BASE_URL}${endpoint}`;
+    // Asegurar que no haya doble barra en la URL
+    const baseUrl = API_BASE_URL.endsWith('/') ? API_BASE_URL.slice(0, -1) : API_BASE_URL;
+    const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    const url = `${baseUrl}${cleanEndpoint}`;
     
     const config = {
         headers: {
