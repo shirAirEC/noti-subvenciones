@@ -67,9 +67,10 @@ async def fetch_subvenciones_bdns(db: Session) -> List[Dict[str, Any]]:
     """Obtener subvenciones de BDNS API"""
     bdns = BDNSService()
     
-    # Fecha desde: Todo el año 2026 (volcado inicial completo)
-    fecha_desde = datetime(2026, 1, 1)
-    fecha_hasta = datetime.now()
+    # Fecha desde: Todo el año 2024 + 2025 (volcado inicial completo con datos reales)
+    # BDNS tiene datos históricos, no del futuro (2026)
+    fecha_desde = datetime(2024, 1, 1)
+    fecha_hasta = datetime(2025, 12, 31)
     
     logger.info(f"📅 Buscando subvenciones desde {fecha_desde.strftime('%d/%m/%Y')} hasta {fecha_hasta.strftime('%d/%m/%Y')}")
     
