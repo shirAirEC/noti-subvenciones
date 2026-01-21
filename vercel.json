@@ -1,5 +1,5 @@
 {
-  "buildCommand": "echo 'Static files - no build needed'",
+  "buildCommand": "node build.js",
   "outputDirectory": ".",
   "headers": [
     {

@@ -1,0 +1,5 @@
+# Node modules (si se añaden dependencias en el futuro)
+node_modules/
+
+# Archivos de configuración generados (ignorar el config.js antiguo si existe)
+# config.js se genera en build time
