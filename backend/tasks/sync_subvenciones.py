@@ -67,13 +67,14 @@ async def fetch_subvenciones_bdns(db: Session) -> List[Dict[str, Any]]:
     """Obtener subvenciones de BDNS API"""
     bdns = BDNSService()
     
-    # Fecha desde: últimas 24 horas
-    fecha_desde = datetime.now() - timedelta(days=1)
+    # Fecha desde: últimos 30 días (ampliado para pruebas)
+    fecha_desde = datetime.now() - timedelta(days=30)
     fecha_hasta = datetime.now()
     
     # Obtener finalidades relacionadas con investigación
-    # TODO: Ajustar estos IDs según catálogo real
-    finalidades_investigacion = [11, 12, 13, 14, 15]
+    # ID 17 = INVESTIGACIÓN, DESARROLLO E INNOVACIÓN (según catálogo BDNS)
+    # ID 10 = EDUCACIÓN (también puede contener convocatorias de investigación)
+    finalidades_investigacion = [17, 10]
     
     nuevas_subvenciones = []
     
