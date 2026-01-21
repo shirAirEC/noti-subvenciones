@@ -8,7 +8,7 @@ from loguru import logger
 import sys
 
 from config import get_settings
-from api import suscripciones, subvenciones, catalogos
+from api import suscripciones, subvenciones, catalogos, admin
 from tasks.scheduler import start_scheduler, stop_scheduler
 
 settings = get_settings()
@@ -76,6 +76,7 @@ app.add_middleware(
 app.include_router(suscripciones.router)
 app.include_router(subvenciones.router)
 app.include_router(catalogos.router)
+app.include_router(admin.router)
 
 
 @app.get("/")
