@@ -4,8 +4,8 @@ Scheduler de tareas programadas
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from loguru import logger
-from backend.config import get_settings
-from backend.tasks.sync_subvenciones import sync_subvenciones_task
+from config import get_settings
+from tasks.sync_subvenciones import sync_subvenciones_task
 
 settings = get_settings()
 

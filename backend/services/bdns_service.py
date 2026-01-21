@@ -5,7 +5,7 @@ import httpx
 from typing import List, Dict, Optional, Any
 from datetime import datetime, date
 from loguru import logger
-from backend.config import get_settings
+from config import get_settings
 
 settings = get_settings()
 

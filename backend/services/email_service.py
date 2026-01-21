@@ -8,7 +8,7 @@ from typing import List, Optional
 from datetime import datetime
 from jinja2 import Template
 from loguru import logger
-from backend.config import get_settings
+from config import get_settings
 
 settings = get_settings()
 

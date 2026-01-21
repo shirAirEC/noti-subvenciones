@@ -7,14 +7,14 @@ from typing import List, Dict, Any
 from loguru import logger
 from sqlalchemy.orm import Session
 
-from backend.database import SessionLocal
-from backend.models.subvencion import Subvencion
-from backend.models.usuario import Usuario
-from backend.models.suscripcion import Suscripcion
-from backend.models.notificacion_enviada import NotificacionEnviada
-from backend.services.bdns_service import BDNSService
-from backend.services.calendar_service import CalendarService
-from backend.services.email_service import EmailService
+from database import SessionLocal
+from models.subvencion import Subvencion
+from models.usuario import Usuario
+from models.suscripcion import Suscripcion
+from models.notificacion_enviada import NotificacionEnviada
+from services.bdns_service import BDNSService
+from services.calendar_service import CalendarService
+from services.email_service import EmailService
 
 
 def sync_subvenciones_task():

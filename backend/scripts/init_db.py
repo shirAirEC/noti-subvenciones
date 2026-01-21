@@ -7,8 +7,8 @@ from pathlib import Path
 # Añadir el directorio raíz al path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from backend.database import engine, Base
-from backend.models import (
+from database import engine, Base
+from models import (
     Subvencion, Usuario, Suscripcion, 
     NotificacionEnviada, Region, AreaTematica, Finalidad
 )

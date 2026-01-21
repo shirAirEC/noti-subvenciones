@@ -4,9 +4,9 @@ Endpoints de subvenciones
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from backend.database import get_db
-from backend.api import schemas
-from backend.models.subvencion import Subvencion
+from database import get_db
+from api import schemas
+from models.subvencion import Subvencion
 
 router = APIRouter(prefix="/api/subvenciones", tags=["subvenciones"])
 

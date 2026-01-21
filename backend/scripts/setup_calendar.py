@@ -6,7 +6,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from backend.services.calendar_service import CalendarService
+from services.calendar_service import CalendarService
 from loguru import logger
 
 

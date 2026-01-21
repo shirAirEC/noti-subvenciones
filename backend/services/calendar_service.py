@@ -7,7 +7,7 @@ from googleapiclient.errors import HttpError
 from datetime import datetime, timedelta
 from typing import Dict, Any, Optional
 from loguru import logger
-from backend.config import get_settings
+from config import get_settings
 
 settings = get_settings()
 

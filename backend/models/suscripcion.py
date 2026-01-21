@@ -4,7 +4,7 @@ Modelo de Suscripción
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, JSON, ForeignKey, Numeric
 from sqlalchemy.orm import relationship
 from datetime import datetime
-from backend.database import Base
+from database import Base
 
 
 class Suscripcion(Base):

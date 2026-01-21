@@ -7,9 +7,9 @@ from contextlib import asynccontextmanager
 from loguru import logger
 import sys
 
-from backend.config import get_settings
-from backend.api import suscripciones, subvenciones, catalogos
-from backend.tasks.scheduler import start_scheduler, stop_scheduler
+from config import get_settings
+from api import suscripciones, subvenciones, catalogos
+from tasks.scheduler import start_scheduler, stop_scheduler
 
 settings = get_settings()
 
@@ -35,7 +35,7 @@ async def lifespan(app: FastAPI):
     
     # Configurar credenciales desde variable de entorno (Railway/Cloud)
     try:
-        from backend.scripts.setup_credentials import setup_credentials
+        from scripts.setup_credentials import setup_credentials
         setup_credentials()
     except Exception as e:
         logger.warning(f"No se pudieron configurar credenciales automáticas: {e}")

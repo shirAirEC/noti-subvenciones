@@ -3,7 +3,7 @@ Modelos de Catálogos
 """
 from sqlalchemy import Column, Integer, String, DateTime
 from datetime import datetime
-from backend.database import Base
+from database import Base
 
 
 class Region(Base):

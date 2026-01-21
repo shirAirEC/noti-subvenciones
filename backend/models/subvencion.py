@@ -3,7 +3,7 @@ Modelo de Subvención
 """
 from sqlalchemy import Column, Integer, String, Text, DateTime, Numeric, Boolean, JSON
 from datetime import datetime
-from backend.database import Base
+from database import Base
 
 
 class Subvencion(Base):

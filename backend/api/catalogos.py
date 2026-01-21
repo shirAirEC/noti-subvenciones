@@ -4,9 +4,9 @@ Endpoints de catálogos
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from typing import List
-from backend.database import get_db
-from backend.api import schemas
-from backend.models.catalogo import Region, AreaTematica
+from database import get_db
+from api import schemas
+from models.catalogo import Region, AreaTematica
 
 router = APIRouter(prefix="/api", tags=["catalogos"])
 

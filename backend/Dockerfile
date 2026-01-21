@@ -24,7 +24,7 @@ COPY . .
 RUN mkdir -p /app/credentials /app/logs
 
 # Exponer puerto (Railway asigna dinámicamente)
-EXPOSE $PORT
+EXPOSE 8000
 
 # Comando de inicio usando variable de entorno PORT de Railway
-CMD uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"]

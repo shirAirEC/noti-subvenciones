@@ -7,9 +7,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from backend.database import SessionLocal
-from backend.models.catalogo import Region, Finalidad, AreaTematica
-from backend.services.bdns_service import BDNSService
+from database import SessionLocal
+from models.catalogo import Region, Finalidad, AreaTematica
+from services.bdns_service import BDNSService
 from loguru import logger
 
 

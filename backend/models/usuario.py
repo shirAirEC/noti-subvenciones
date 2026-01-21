@@ -4,7 +4,7 @@ Modelo de Usuario
 from sqlalchemy import Column, Integer, String, Boolean, DateTime
 from sqlalchemy.orm import relationship
 from datetime import datetime
-from backend.database import Base
+from database import Base
 
 
 class Usuario(Base):

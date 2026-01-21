@@ -5,12 +5,12 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 import secrets
-from backend.database import get_db
-from backend.api import schemas
-from backend.models.usuario import Usuario
-from backend.models.suscripcion import Suscripcion
-from backend.services.email_service import EmailService
-from backend.services.calendar_service import CalendarService
+from database import get_db
+from api import schemas
+from models.usuario import Usuario
+from models.suscripcion import Suscripcion
+from services.email_service import EmailService
+from services.calendar_service import CalendarService
 from loguru import logger
 
 router = APIRouter(prefix="/api/suscripcion", tags=["suscripciones"])
