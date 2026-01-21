@@ -156,6 +156,45 @@ async def populate_catalogs():
         db.close()
 
 
+@router.get("/test-bdns")
+async def test_bdns():
+    """
+    Prueba la API de BDNS para ver qué datos devuelve
+    """
+    try:
+        bdns = BDNSService()
+        
+        # Probar regiones
+        logger.info("Probando API de regiones...")
+        regiones_data = await bdns.get_regiones()
+        
+        # Probar finalidades
+        logger.info("Probando API de finalidades...")
+        finalidades_data = await bdns.get_finalidades()
+        
+        return {
+            "status": "success",
+            "bdns_api_url": bdns.base_url,
+            "regiones": {
+                "count": len(regiones_data) if regiones_data else 0,
+                "sample": regiones_data[:3] if regiones_data else [],
+                "first_item": regiones_data[0] if regiones_data else None
+            },
+            "finalidades": {
+                "count": len(finalidades_data) if finalidades_data else 0,
+                "sample": finalidades_data[:3] if finalidades_data else [],
+                "first_item": finalidades_data[0] if finalidades_data else None
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"Error al probar BDNS: {e}")
+        return {
+            "status": "error",
+            "error": str(e)
+        }
+
+
 @router.get("/status")
 async def admin_status():
     """
