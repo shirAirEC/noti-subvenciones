@@ -1,4 +1,6 @@
 {
+  "buildCommand": "echo 'Static files - no build needed'",
+  "outputDirectory": ".",
   "headers": [
     {
       "source": "/(.*)",
