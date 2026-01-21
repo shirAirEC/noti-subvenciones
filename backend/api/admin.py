@@ -218,6 +218,33 @@ async def test_bdns():
         }
 
 
+@router.post("/sync-subvenciones")
+async def sync_subvenciones_manual():
+    """
+    Forzar sincronización manual de subvenciones desde BDNS
+    ⚠️ Esto ejecuta la tarea completa: obtener, guardar, crear eventos y notificar
+    """
+    try:
+        from tasks.sync_subvenciones import sync_subvenciones_task
+        
+        logger.info("🔄 Iniciando sincronización manual de subvenciones...")
+        
+        # Ejecutar la tarea de sincronización
+        sync_subvenciones_task()
+        
+        return {
+            "status": "success",
+            "message": "Sincronización completada. Revisa los logs para más detalles."
+        }
+        
+    except Exception as e:
+        logger.error(f"Error en sincronización manual: {e}")
+        return {
+            "status": "error",
+            "message": f"Error: {str(e)}"
+        }
+
+
 @router.get("/status")
 async def admin_status():
     """
