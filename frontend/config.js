@@ -12,7 +12,7 @@ const config = {
     API_BASE_URL: isDevelopment 
         ? 'http://localhost:8000'  // Desarrollo local
         : window.location.origin.includes('vercel.app')
-            ? 'https://TU-PROYECTO.up.railway.app'  // Producción - CAMBIAR ESTO
+            ? 'https://noti-subvenciones-production.up.railway.app'  // Producción Railway
             : 'http://localhost:8000',  // Fallback
     
     // Otras configuraciones

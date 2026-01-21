@@ -64,12 +64,31 @@ app = FastAPI(
 )
 
 # Configurar CORS
+# Permitir Vercel (todos los subdominios), localhost y frontend_url configurado
+allowed_origins = [
+    "http://localhost:3000",
+    "http://localhost:8080",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:8080",
+]
+
+# Añadir frontend_url si está configurado
+if settings.frontend_url:
+    allowed_origins.append(settings.frontend_url)
+
+# Permitir todos los subdominios de Vercel para el proyecto
+allowed_origins.extend([
+    "https://noti-subvenciones.vercel.app",
+    "https://noti-subvenciones-9ysq0eotg-shirairs-projects.vercel.app",
+])
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.frontend_url, "http://localhost:8080", "http://localhost:3000"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    allow_origin_regex=r"https://noti-subvenciones.*\.vercel\.app",  # Wildcard para previews de Vercel
 )
 
 # Registrar routers
