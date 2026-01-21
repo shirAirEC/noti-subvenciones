@@ -1,0 +1,27 @@
+name: Deploy to Railway and Vercel
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Deploy to Railway
+        run: echo "Railway despliega automáticamente desde GitHub"
+      
+      - name: Deploy to Vercel
+        run: echo "Vercel despliega automáticamente desde GitHub"
+      
+      - name: Success
+        run: |
+          echo "✅ Despliegue completado"
+          echo "Frontend: Vercel desplegará automáticamente"
+          echo "Backend: Railway desplegará automáticamente"

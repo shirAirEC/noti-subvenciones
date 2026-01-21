@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Sistema de notificaciones de subvenciones de investigación - BDNS">
+    <title>Notificaciones de Subvenciones de Investigación</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="config.js"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <h1>🔔 Notificaciones de Subvenciones</h1>
+            <p class="subtitle">Recibe alertas automáticas de subvenciones de investigación</p>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <h2>Mantente Informado sobre Subvenciones de Investigación</h2>
+                <p>
+                    Sistema automatizado que consulta diariamente la Base de Datos Nacional de Subvenciones (BDNS)
+                    y te notifica por email cuando hay nuevas convocatorias que coinciden con tus intereses.
+                </p>
+                <div class="hero-features">
+                    <div class="feature">
+                        <span class="icon">📧</span>
+                        <p>Notificaciones por email</p>
+                    </div>
+                    <div class="feature">
+                        <span class="icon">📅</span>
+                        <p>Calendario compartido</p>
+                    </div>
+                    <div class="feature">
+                        <span class="icon">🔔</span>
+                        <p>Recordatorios automáticos</p>
+                    </div>
+                    <div class="feature">
+                        <span class="icon">🎯</span>
+                        <p>Filtros personalizados</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Formulario de Suscripción -->
+    <section class="subscription-section">
+        <div class="container">
+            <div class="form-card">
+                <h2>Suscríbete Ahora</h2>
+                <p class="form-description">
+                    Completa el formulario y empieza a recibir notificaciones personalizadas
+                </p>
+
+                <form id="subscriptionForm" class="subscription-form">
+                    <!-- Email y Nombre -->
+                    <div class="form-group">
+                        <label for="email">Email *</label>
+                        <input 
+                            type="email" 
+                            id="email" 
+                            name="email" 
+                            required 
+                            placeholder="tu@email.com"
+                            aria-label="Email"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="nombre">Nombre</label>
+                        <input 
+                            type="text" 
+                            id="nombre" 
+                            name="nombre" 
+                            placeholder="Tu nombre (opcional)"
+                            aria-label="Nombre"
+                        >
+                    </div>
+
+                    <!-- Regiones -->
+                    <div class="form-group">
+                        <label>Regiones de Interés</label>
+                        <div class="checkbox-group" id="regionesGroup">
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="regiones" value="nacional">
+                                <span>Nacional (toda España)</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="regiones" value="canarias">
+                                <span>Canarias</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="regiones" value="todas">
+                                <span>Todas las regiones</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Áreas Temáticas -->
+                    <div class="form-group">
+                        <label>Áreas Temáticas</label>
+                        <div class="checkbox-group" id="areasGroup">
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="areas" value="1">
+                                <span>Investigación Científica</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="areas" value="2">
+                                <span>Desarrollo Tecnológico</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="areas" value="3">
+                                <span>Innovación Empresarial</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="areas" value="4">
+                                <span>Formación e Investigadores</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="areas" value="5">
+                                <span>Infraestructuras Científicas</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Rango de Presupuesto -->
+                    <div class="form-group">
+                        <label>Rango de Presupuesto (€)</label>
+                        <div class="range-group">
+                            <input 
+                                type="number" 
+                                id="presupuesto_min" 
+                                name="presupuesto_min" 
+                                placeholder="Mínimo"
+                                min="0"
+                                step="1000"
+                                aria-label="Presupuesto mínimo"
+                            >
+                            <span>—</span>
+                            <input 
+                                type="number" 
+                                id="presupuesto_max" 
+                                name="presupuesto_max" 
+                                placeholder="Máximo"
+                                min="0"
+                                step="1000"
+                                aria-label="Presupuesto máximo"
+                            >
+                        </div>
+                    </div>
+
+                    <!-- Botón de envío -->
+                    <button type="submit" class="btn-primary" id="submitBtn">
+                        Suscribirme
+                    </button>
+
+                    <!-- Mensaje de respuesta -->
+                    <div id="responseMessage" class="response-message" style="display: none;"></div>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Calendario -->
+    <section class="calendar-section">
+        <div class="container">
+            <h2>📅 Calendario Compartido</h2>
+            <p>
+                Accede al calendario público con todas las subvenciones de investigación.
+                Añádelo a tu Google Calendar para recibir recordatorios automáticos.
+            </p>
+            <div class="calendar-actions">
+                <a href="#" id="calendarLink" class="btn-secondary" target="_blank">
+                    Ver Calendario
+                </a>
+                <a href="#" id="icalLink" class="btn-secondary" target="_blank">
+                    Suscribirse (iCal)
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="faq-section">
+        <div class="container">
+            <h2>Preguntas Frecuentes</h2>
+            
+            <div class="faq-item">
+                <h3>¿Cómo funciona?</h3>
+                <p>
+                    Nuestro sistema consulta automáticamente la Base de Datos Nacional de Subvenciones (BDNS)
+                    cada día. Cuando encuentra nuevas convocatorias que coinciden con tus filtros, te envía
+                    un email y añade el evento al calendario compartido.
+                </p>
+            </div>
+
+            <div class="faq-item">
+                <h3>¿Con qué frecuencia recibiré notificaciones?</h3>
+                <p>
+                    Recibirás un email cada vez que se publique una nueva subvención que coincida con tus
+                    criterios de búsqueda. Además, Google Calendar te enviará recordatorios 7, 3 y 1 día(s)
+                    antes de la fecha límite.
+                </p>
+            </div>
+
+            <div class="faq-item">
+                <h3>¿Es gratis?</h3>
+                <p>
+                    Sí, este servicio es completamente gratuito y de código abierto.
+                </p>
+            </div>
+
+            <div class="faq-item">
+                <h3>¿Cómo cancelo mi suscripción?</h3>
+                <p>
+                    Cada email que recibas incluirá un enlace para cancelar tu suscripción.
+                    También puedes contactarnos directamente.
+                </p>
+            </div>
+
+            <div class="faq-item">
+                <h3>¿Qué datos recopilan?</h3>
+                <p>
+                    Solo almacenamos tu email, nombre (opcional) y las preferencias de filtros que selecciones.
+                    No compartimos tus datos con terceros y puedes eliminar tu cuenta en cualquier momento.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>
+                Sistema de Notificaciones de Subvenciones BDNS
+                | Datos obtenidos de <a href="https://www.infosubvenciones.es" target="_blank">BDNS</a>
+            </p>
+            <p class="footer-note">
+                Este proyecto es de código abierto y no está afiliado oficialmente con la BDNS
+            </p>
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,85 @@
+version: '3.8'
+
+services:
+  # Base de datos PostgreSQL
+  postgres:
+    image: postgres:15-alpine
+    container_name: subvenciones-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: subvenciones
+      POSTGRES_USER: subvenciones_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme123}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/migrations/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U subvenciones_user -d subvenciones"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend FastAPI
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: subvenciones-backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://subvenciones_user:${POSTGRES_PASSWORD:-changeme123}@postgres:5432/subvenciones
+      BDNS_API_URL: https://www.infosubvenciones.es/bdnstrans/api
+      GOOGLE_SERVICE_ACCOUNT_FILE: /app/credentials/service-account.json
+      CALENDAR_ID: ${CALENDAR_ID}
+      EMAIL_FROM: ${EMAIL_FROM}
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      APP_HOST: 0.0.0.0
+      APP_PORT: 8000
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
+      SCHEDULER_ENABLED: ${SCHEDULER_ENABLED:-true}
+      SCHEDULER_HOUR: ${SCHEDULER_HOUR:-8}
+      SCHEDULER_MINUTE: ${SCHEDULER_MINUTE:-0}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    volumes:
+      - ./credentials:/app/credentials:ro
+      - ./logs:/app/logs
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Frontend Nginx
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: subvenciones-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  default:
+    name: subvenciones-network
