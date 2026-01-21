@@ -10,7 +10,6 @@ const form = document.getElementById('subscriptionForm');
 const submitBtn = document.getElementById('submitBtn');
 const responseMessage = document.getElementById('responseMessage');
 const calendarLink = document.getElementById('calendarLink');
-const icalLink = document.getElementById('icalLink');
 
 /**
  * Inicializar aplicación
@@ -26,8 +25,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Configurar enlaces de calendario
     // TODO: Obtener URL real del calendario desde API
-    calendarLink.href = '#';
-    icalLink.href = '#';
+    if (calendarLink) {
+        calendarLink.href = '#';
+    }
 });
 
 /**
