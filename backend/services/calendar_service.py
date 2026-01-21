@@ -8,6 +8,9 @@ from datetime import datetime, timedelta
 from typing import Dict, Any, Optional
 from loguru import logger
 from config import get_settings
+import os
+import json
+from pathlib import Path
 
 settings = get_settings()
 
@@ -25,10 +28,24 @@ class CalendarService:
     def _authenticate(self):
         """Autenticar con cuenta de servicio"""
         try:
-            credentials = service_account.Credentials.from_service_account_file(
-                settings.google_service_account_file,
-                scopes=SCOPES
-            )
+            # Intentar primero desde variable de entorno (Railway/Cloud)
+            credentials_json = os.getenv('GOOGLE_CREDENTIALS_JSON')
+            
+            if credentials_json:
+                logger.info("Usando credenciales desde variable de entorno GOOGLE_CREDENTIALS_JSON")
+                credentials_info = json.loads(credentials_json)
+                credentials = service_account.Credentials.from_service_account_info(
+                    credentials_info,
+                    scopes=SCOPES
+                )
+            else:
+                # Fallback: usar archivo local
+                logger.info(f"Usando credenciales desde archivo: {settings.google_service_account_file}")
+                credentials = service_account.Credentials.from_service_account_file(
+                    settings.google_service_account_file,
+                    scopes=SCOPES
+                )
+            
             self.service = build('calendar', 'v3', credentials=credentials)
             logger.info("✓ Autenticación con Google Calendar exitosa")
         except Exception as e:
