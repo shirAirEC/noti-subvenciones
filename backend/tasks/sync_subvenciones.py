@@ -64,74 +64,170 @@ def sync_subvenciones_task():
 
 
 async def fetch_subvenciones_bdns(db: Session) -> List[Dict[str, Any]]:
-    """Obtener subvenciones de BDNS API"""
+    """
+    Obtener subvenciones de INVESTIGACIÓN PURA de BDNS API
+    
+    🔬 Finalidad: I+D+i (17)
+    📅 Período: 2024-2025 (datos reales en BDNS)
+    📍 Región: Canarias (todas las islas) + Nacional (Ministerios)
+    """
+    from models.catalogo import Region
+    
     bdns = BDNSService()
     
-    # Fecha desde: Todo el año 2024 + 2025 (volcado inicial completo con datos reales)
-    # BDNS tiene datos históricos, no del futuro (2026)
+    # Período 2024-2025 (BDNS tiene datos históricos, no futuros)
     fecha_desde = datetime(2024, 1, 1)
     fecha_hasta = datetime(2025, 12, 31)
     
-    logger.info(f"📅 Buscando subvenciones desde {fecha_desde.strftime('%d/%m/%Y')} hasta {fecha_hasta.strftime('%d/%m/%Y')}")
+    logger.info("=" * 80)
+    logger.info("🔬 CARGA: INVESTIGACIÓN PURA (2024-2025)")
+    logger.info("=" * 80)
+    logger.info(f"📅 Período: {fecha_desde.year}-{fecha_hasta.year}")
     
-    # Obtener finalidades relacionadas con investigación
-    # ID 17 = INVESTIGACIÓN, DESARROLLO E INNOVACIÓN (según catálogo BDNS)
-    # ID 10 = EDUCACIÓN (también puede contener convocatorias de investigación)
-    # ID 14 = COMERCIO, TURISMO Y PYMES (subvenciones empresariales)
-    # ID 13 = INDUSTRIA Y ENERGÍA (I+D empresarial)
-    finalidades_investigacion = [17, 10, 14, 13]
+    # Solo Finalidad 17: I+D+i
+    finalidades_investigacion = [17]
+    
+    # Obtener regiones de Canarias (ES7*)
+    regiones_canarias = db.query(Region).filter(Region.codigo.like("ES7%")).all()
+    region_ids_canarias = [r.id for r in regiones_canarias]
+    
+    logger.info(f"🏝️ Regiones Canarias: {len(region_ids_canarias)}")
     
     nuevas_subvenciones = []
+    total_procesadas_bdns = 0
     
     for finalidad in finalidades_investigacion:
+        # ===== CANARIAS =====
+        logger.info(f"🏝️ Buscando en CANARIAS (ES7) - Finalidad {finalidad}...")
         try:
-            # Paginación: obtener todas las páginas disponibles
             page = 0
-            page_size = 100  # Aumentado para obtener más resultados por llamada
-            total_obtenidas = 0
+            page_size = 100
             
             while True:
                 resultado = await bdns.get_convocatorias(
                     finalidad=finalidad,
                     fecha_desde=fecha_desde.date(),
                     fecha_hasta=fecha_hasta.date(),
+                    regiones=region_ids_canarias,
+                    tipo_administracion=None,  # No filtrar por tipo admin en Canarias
                     page=page,
                     page_size=page_size
                 )
                 
                 convocatorias = resultado.get("convocatorias", [])
                 total_elementos = resultado.get("totalElementos", 0)
+                total_procesadas_bdns += len(convocatorias)
                 
-                logger.info(f"📦 Finalidad {finalidad}: Obtenidas {len(convocatorias)} convocatorias en página {page} (total disponibles: {total_elementos})")
+                logger.info(f"  📦 Página {page}: {len(convocatorias)} convocatorias (total disponibles: {total_elementos})")
                 
                 if not convocatorias:
-                    break  # No hay más resultados
+                    break
                 
+                # Obtener detalle de cada convocatoria
                 for conv in convocatorias:
                     id_bdns = str(conv.get("numeroConvocatoria"))
                     
                     # Verificar si ya existe
-                    existe = db.query(Subvencion).filter(
-                        Subvencion.id_bdns == id_bdns
-                    ).first()
+                    existe = db.query(Subvencion).filter(Subvencion.id_bdns == id_bdns).first()
                     
                     if not existe:
-                        parsed = bdns.parse_convocatoria(conv)
-                        nuevas_subvenciones.append(parsed)
+                        # Obtener detalle completo
+                        try:
+                            detalle = await bdns.get_convocatoria_detalle(id_bdns)
+                            parsed = bdns.parse_convocatoria(
+                                detalle.get("convocatoria", detalle) if isinstance(detalle, dict) else detalle
+                            )
+                            
+                            # Solo añadir si tiene fechas de solicitud
+                            if parsed.get("fecha_fin_solicitud"):
+                                nuevas_subvenciones.append(parsed)
+                                logger.debug(f"    ✓ {id_bdns}: {parsed['titulo'][:60]}...")
+                            else:
+                                logger.debug(f"    ⏭️ {id_bdns}: Sin fechas de solicitud")
+                        except Exception as e:
+                            logger.warning(f"    ⚠️ Error al obtener detalle de {id_bdns}: {e}")
+                            continue
                 
-                total_obtenidas += len(convocatorias)
-                
-                # Si obtuvimos menos que el tamaño de página, ya no hay más
-                if len(convocatorias) < page_size or total_obtenidas >= total_elementos:
+                # Paginación
+                if len(convocatorias) < page_size or total_procesadas_bdns >= total_elementos:
                     break
                 
-                page += 1  # Siguiente página
+                page += 1
             
-            logger.info(f"✅ Finalidad {finalidad}: Total procesadas {total_obtenidas} convocatorias")
+            logger.info(f"  ✅ Canarias - Finalidad {finalidad}: Procesadas {total_procesadas_bdns} convocatorias")
             
         except Exception as e:
-            logger.error(f"Error al obtener convocatorias para finalidad {finalidad}: {e}")
-            continue
+            logger.error(f"  ❌ Error en Canarias - Finalidad {finalidad}: {e}")
+        
+        # ===== NACIONAL (ESTADO) =====
+        logger.info(f"🏛️ Buscando a nivel NACIONAL (Estado) - Finalidad {finalidad}...")
+        try:
+            page = 0
+            page_size = 100
+            contador_nacional = 0
+            
+            while True:
+                resultado = await bdns.get_convocatorias(
+                    finalidad=finalidad,
+                    fecha_desde=fecha_desde.date(),
+                    fecha_hasta=fecha_hasta.date(),
+                    regiones=None,
+                    tipo_administracion='C',  # C = Estado (Ministerios)
+                    page=page,
+                    page_size=page_size
+                )
+                
+                convocatorias = resultado.get("convocatorias", [])
+                total_elementos = resultado.get("totalElementos", 0)
+                contador_nacional += len(convocatorias)
+                
+                logger.info(f"  📦 Página {page}: {len(convocatorias)} convocatorias (total disponibles: {total_elementos})")
+                
+                if not convocatorias:
+                    break
+                
+                # Obtener detalle de cada convocatoria
+                for conv in convocatorias:
+                    id_bdns = str(conv.get("numeroConvocatoria"))
+                    
+                    # Verificar si ya existe
+                    existe = db.query(Subvencion).filter(Subvencion.id_bdns == id_bdns).first()
+                    
+                    if not existe:
+                        # Obtener detalle completo
+                        try:
+                            detalle = await bdns.get_convocatoria_detalle(id_bdns)
+                            parsed = bdns.parse_convocatoria(
+                                detalle.get("convocatoria", detalle) if isinstance(detalle, dict) else detalle
+                            )
+                            
+                            # Solo añadir si tiene fechas de solicitud
+                            if parsed.get("fecha_fin_solicitud"):
+                                nuevas_subvenciones.append(parsed)
+                                logger.debug(f"    ✓ {id_bdns}: {parsed['titulo'][:60]}...")
+                            else:
+                                logger.debug(f"    ⏭️ {id_bdns}: Sin fechas de solicitud")
+                        except Exception as e:
+                            logger.warning(f"    ⚠️ Error al obtener detalle de {id_bdns}: {e}")
+                            continue
+                
+                # Paginación
+                if len(convocatorias) < page_size or contador_nacional >= total_elementos:
+                    break
+                
+                page += 1
+            
+            logger.info(f"  ✅ Nacional - Finalidad {finalidad}: Procesadas {contador_nacional} convocatorias")
+            total_procesadas_bdns += contador_nacional
+            
+        except Exception as e:
+            logger.error(f"  ❌ Error en Nacional - Finalidad {finalidad}: {e}")
+    
+    logger.info("=" * 80)
+    logger.info(f"📊 RESUMEN:")
+    logger.info(f"   Total procesadas en BDNS: {total_procesadas_bdns}")
+    logger.info(f"   Nuevas con fechas: {len(nuevas_subvenciones)}")
+    logger.info("=" * 80)
     
     return nuevas_subvenciones
 
