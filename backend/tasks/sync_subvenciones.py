@@ -122,17 +122,21 @@ async def fetch_subvenciones_bdns(db: Session) -> List[Dict[str, Any]]:
                     logger.debug(f"  ⏭️ {id_bdns}: Sin fecha fin de solicitud")
                     continue
                 
-                # FILTRO 2: Ministerio/Subsecretaría de Ciencia, Innovación y Universidades
+                # FILTRO 2: Órgano del ámbito de Ciencia e Innovación (flexible)
                 organo = subvencion_data.get("organo_convocante", "").upper()
-                if not ("CIENCIA" in organo and "INNOVACI" in organo and "UNIVERSIDADES" in organo):
-                    logger.debug(f"  ⏭️ {id_bdns}: No es del Ministerio de Ciencia (órgano: {organo[:50]})")
+                palabras_clave = ["CIENCIA", "INNOVACI", "INVESTIGACI", "I+D"]
+                tiene_palabras_clave = any(palabra in organo for palabra in palabras_clave)
+                
+                if not tiene_palabras_clave:
+                    logger.debug(f"  ⏭️ {id_bdns}: Órgano sin palabras clave I+D+i ({organo[:50]})")
                     continue
                 
-                # FILTRO 3: Solo España o Canarias
+                # FILTRO 3: Regiones España/Canarias (si está especificada)
                 regiones_detalle = [r.get('descripcion', '').upper() for r in detalle.get('regiones', [])]
-                if not any(r in ALLOWED_REGIONES for r in regiones_detalle):
-                    logger.debug(f"  ⏭️ {id_bdns}: Región no permitida ({regiones_detalle})")
-                    continue
+                if regiones_detalle:  # Si hay regiones especificadas
+                    if not any(r in ALLOWED_REGIONES or "ESPAÑA" in r or "CANARIAS" in r for r in regiones_detalle):
+                        logger.debug(f"  ⏭️ {id_bdns}: Región no permitida ({regiones_detalle})")
+                        continue
                 
                 logger.info(f"  ✅ {id_bdns}: {subvencion_data.get('titulo', '')[:60]}")
                 nuevas_subvenciones.append(subvencion_data)
