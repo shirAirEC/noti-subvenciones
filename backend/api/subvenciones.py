@@ -17,6 +17,10 @@ async def listar_subvenciones(
     limit: int = Query(50, ge=1, le=100),
     activa: Optional[bool] = True,
     region_id: Optional[int] = None,
+    region_impacto: Optional[str] = None,
+    nivel2: Optional[str] = None,
+    nivel3: Optional[str] = None,
+    sector_economico: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
     """Listar subvenciones activas"""
@@ -27,6 +31,18 @@ async def listar_subvenciones(
     
     if region_id:
         query = query.filter(Subvencion.region_id == region_id)
+    
+    if region_impacto:
+        query = query.filter(Subvencion.region_impacto.ilike(f"%{region_impacto}%"))
+    
+    if nivel2:
+        query = query.filter(Subvencion.nivel2.ilike(f"%{nivel2}%"))
+    
+    if nivel3:
+        query = query.filter(Subvencion.nivel3.ilike(f"%{nivel3}%"))
+    
+    if sector_economico:
+        query = query.filter(Subvencion.sector_economico.ilike(f"%{sector_economico}%"))
     
     query = query.order_by(Subvencion.fecha_fin_solicitud.desc())
     

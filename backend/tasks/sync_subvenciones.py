@@ -83,7 +83,8 @@ async def fetch_subvenciones_bdns(db: Session) -> List[Dict[str, Any]]:
     
     nuevas_subvenciones = []
     
-    for finalidad in finalidades_investigacion:
+    # PRUEBA: Solo una iteración para diagnóstico
+    for finalidad in [None]:  # Solo una consulta sin filtros
         try:
             # Paginación: obtener todas las páginas disponibles
             page = 0
@@ -91,13 +92,18 @@ async def fetch_subvenciones_bdns(db: Session) -> List[Dict[str, Any]]:
             total_obtenidas = 0
             
             while True:
+                # PRUEBA DIAGNÓSTICA: Sin filtros para ver si al menos obtenemos ALGO
                 resultado = await bdns.get_convocatorias(
-                    finalidad=finalidad,
-                    fecha_desde=fecha_desde.date(),
-                    fecha_hasta=fecha_hasta.date(),
+                    finalidad=None,  # SIN FILTRO DE FINALIDAD
+                    fecha_desde=None,  # SIN FILTRO DE FECHA
+                    fecha_hasta=None,  # SIN FILTRO DE FECHA
                     page=page,
                     page_size=page_size
                 )
+                
+                # SOLO PROBAR UNA VEZ Y SALIR
+                if page > 0:
+                    break
                 
                 convocatorias = resultado.get("convocatorias", [])
                 total_elementos = resultado.get("totalElementos", 0)

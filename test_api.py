@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 Script de pruebas para la API del sistema de notificaciones de subvenciones
 """
@@ -6,7 +7,11 @@ Script de pruebas para la API del sistema de notificaciones de subvenciones
 import requests
 import json
 import sys
+import io
 from datetime import datetime
+
+# Configurar stdout para UTF-8 en Windows
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 # Colores para terminal
 GREEN = '\033[92m'
@@ -21,13 +26,13 @@ def print_header(text):
     print(f"{BLUE}{'='*60}{RESET}\n")
 
 def print_success(text):
-    print(f"{GREEN}✓ {text}{RESET}")
+    print(f"{GREEN}[OK] {text}{RESET}")
 
 def print_error(text):
-    print(f"{RED}✗ {text}{RESET}")
+    print(f"{RED}[ERROR] {text}{RESET}")
 
 def print_info(text):
-    print(f"{YELLOW}ℹ {text}{RESET}")
+    print(f"{YELLOW}[INFO] {text}{RESET}")
 
 def test_endpoint(base_url, endpoint, method='GET', data=None, description=""):
     """Prueba un endpoint de la API"""
@@ -202,11 +207,11 @@ def run_tests(base_url):
     # Porcentaje
     percentage = (results['passed'] / results['total'] * 100) if results['total'] > 0 else 0
     if percentage == 100:
-        print_success(f"\n¡Todas las pruebas pasaron! ✨")
+        print_success(f"\nTodas las pruebas pasaron!")
     elif percentage >= 70:
-        print(f"\n{YELLOW}Porcentaje de éxito: {percentage:.1f}%{RESET}")
+        print(f"\n{YELLOW}Porcentaje de exito: {percentage:.1f}%{RESET}")
     else:
-        print_error(f"\nPorcentaje de éxito: {percentage:.1f}%")
+        print_error(f"\nPorcentaje de exito: {percentage:.1f}%")
     
     return results
 
