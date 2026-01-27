@@ -16,6 +16,11 @@ from services.bdns_service import BDNSService
 from services.calendar_service import CalendarService
 from services.email_service import EmailService
 
+# Filtros configurados
+ALLOWED_REGIONES = {
+    "ESPAÑA", "ES - ESPAÑA", "CANARIAS", "ISLAS CANARIAS",
+    "COMUNIDAD AUTONOMA DE CANARIAS", "COMUNIDAD AUTÓNOMA DE CANARIAS",
+}
 
 def sync_subvenciones_task():
     """
@@ -110,10 +115,27 @@ async def fetch_subvenciones_bdns(db: Session) -> List[Dict[str, Any]]:
                 parsed_base = bdns.parse_convocatoria(conv)
                 parsed_detalle = bdns.parse_convocatoria_detalle(detalle)
                 
-                if not parsed_detalle.get("fecha_inicio_solicitud") or not parsed_detalle.get("fecha_fin_solicitud"):
-                    logger.warning(f"⚠️ Convocatoria {id_bdns} sin fechas de solicitud en detalle")
+                subvencion_data = {**parsed_base, **parsed_detalle}
                 
-                nuevas_subvenciones.append({**parsed_base, **parsed_detalle})
+                # FILTRO 1: Debe tener fechas de solicitud
+                if not subvencion_data.get("fecha_fin_solicitud"):
+                    logger.debug(f"  ⏭️ {id_bdns}: Sin fecha fin de solicitud")
+                    continue
+                
+                # FILTRO 2: Ministerio/Subsecretaría de Ciencia, Innovación y Universidades
+                organo = subvencion_data.get("organo_convocante", "").upper()
+                if not ("CIENCIA" in organo and "INNOVACI" in organo and "UNIVERSIDADES" in organo):
+                    logger.debug(f"  ⏭️ {id_bdns}: No es del Ministerio de Ciencia (órgano: {organo[:50]})")
+                    continue
+                
+                # FILTRO 3: Solo España o Canarias
+                regiones_detalle = [r.get('descripcion', '').upper() for r in detalle.get('regiones', [])]
+                if not any(r in ALLOWED_REGIONES for r in regiones_detalle):
+                    logger.debug(f"  ⏭️ {id_bdns}: Región no permitida ({regiones_detalle})")
+                    continue
+                
+                logger.info(f"  ✅ {id_bdns}: {subvencion_data.get('titulo', '')[:60]}")
+                nuevas_subvenciones.append(subvencion_data)
             except Exception as e:
                 logger.error(f"Error al obtener detalle de convocatoria {id_bdns}: {e}")
                 continue
