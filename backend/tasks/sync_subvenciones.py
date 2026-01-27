@@ -64,80 +64,63 @@ def sync_subvenciones_task():
 
 
 async def fetch_subvenciones_bdns(db: Session) -> List[Dict[str, Any]]:
-    """Obtener subvenciones de BDNS API"""
+    """Obtener subvenciones de BDNS API (listado + detalle)"""
     bdns = BDNSService()
     
-    # Fecha desde: Todo el año 2024 + 2025 (volcado inicial completo con datos reales)
-    # BDNS tiene datos históricos, no del futuro (2026)
-    fecha_desde = datetime(2024, 1, 1)
-    fecha_hasta = datetime(2025, 12, 31)
+    fecha_desde = datetime(2025, 1, 1)
+    fecha_hasta = datetime(2026, 12, 31)
     
-    logger.info(f"📅 Buscando subvenciones desde {fecha_desde.strftime('%d/%m/%Y')} hasta {fecha_hasta.strftime('%d/%m/%Y')}")
-    
-    # Obtener finalidades relacionadas con investigación
-    # ID 17 = INVESTIGACIÓN, DESARROLLO E INNOVACIÓN (según catálogo BDNS)
-    # ID 10 = EDUCACIÓN (también puede contener convocatorias de investigación)
-    # ID 14 = COMERCIO, TURISMO Y PYMES (subvenciones empresariales)
-    # ID 13 = INDUSTRIA Y ENERGÍA (I+D empresarial)
-    finalidades_investigacion = [17, 10, 14, 13]
+    logger.info(
+        f"📅 Buscando subvenciones desde {fecha_desde.strftime('%d/%m/%Y')} hasta {fecha_hasta.strftime('%d/%m/%Y')}"
+    )
+    logger.info("🔎 Finalidad: INVESTIGACIÓN, DESARROLLO E INNOVACIÓN (17)")
     
     nuevas_subvenciones = []
+    page = 0
+    page_size = 100
     
-    # PRUEBA: Solo una iteración para diagnóstico
-    for finalidad in [None]:  # Solo una consulta sin filtros
-        try:
-            # Paginación: obtener todas las páginas disponibles
-            page = 0
-            page_size = 100  # Aumentado para obtener más resultados por llamada
-            total_obtenidas = 0
+    while True:
+        resultado = await bdns.get_convocatorias(
+            finalidad=17,
+            fecha_desde=fecha_desde.date(),
+            fecha_hasta=fecha_hasta.date(),
+            page=page,
+            page_size=page_size
+        )
+        
+        convocatorias = resultado.get("convocatorias", [])
+        total_elementos = resultado.get("totalElementos", 0)
+        
+        logger.info(f"📦 Página {page}: {len(convocatorias)} convocatorias (total disponibles: {total_elementos})")
+        
+        if not convocatorias:
+            break
+        
+        for conv in convocatorias:
+            id_bdns = str(conv.get("numeroConvocatoria"))
+            if not id_bdns:
+                continue
             
-            while True:
-                # PRUEBA DIAGNÓSTICA: Sin filtros para ver si al menos obtenemos ALGO
-                resultado = await bdns.get_convocatorias(
-                    finalidad=None,  # SIN FILTRO DE FINALIDAD
-                    fecha_desde=None,  # SIN FILTRO DE FECHA
-                    fecha_hasta=None,  # SIN FILTRO DE FECHA
-                    page=page,
-                    page_size=page_size
-                )
-                
-                # SOLO PROBAR UNA VEZ Y SALIR
-                if page > 0:
-                    break
-                
-                convocatorias = resultado.get("convocatorias", [])
-                total_elementos = resultado.get("totalElementos", 0)
-                
-                logger.info(f"📦 Finalidad {finalidad}: Obtenidas {len(convocatorias)} convocatorias en página {page} (total disponibles: {total_elementos})")
-                
-                if not convocatorias:
-                    break  # No hay más resultados
-                
-                for conv in convocatorias:
-                    id_bdns = str(conv.get("numeroConvocatoria"))
-                    
-                    # Verificar si ya existe
-                    existe = db.query(Subvencion).filter(
-                        Subvencion.id_bdns == id_bdns
-                    ).first()
-                    
-                    if not existe:
-                        parsed = bdns.parse_convocatoria(conv)
-                        nuevas_subvenciones.append(parsed)
-                
-                total_obtenidas += len(convocatorias)
-                
-                # Si obtuvimos menos que el tamaño de página, ya no hay más
-                if len(convocatorias) < page_size or total_obtenidas >= total_elementos:
-                    break
-                
-                page += 1  # Siguiente página
+            existe = db.query(Subvencion).filter(Subvencion.id_bdns == id_bdns).first()
+            if existe:
+                continue
             
-            logger.info(f"✅ Finalidad {finalidad}: Total procesadas {total_obtenidas} convocatorias")
-            
-        except Exception as e:
-            logger.error(f"Error al obtener convocatorias para finalidad {finalidad}: {e}")
-            continue
+            try:
+                detalle = await bdns.get_convocatoria_detalle(id_bdns)
+                parsed_base = bdns.parse_convocatoria(conv)
+                parsed_detalle = bdns.parse_convocatoria_detalle(detalle)
+                
+                if not parsed_detalle.get("fecha_inicio_solicitud") or not parsed_detalle.get("fecha_fin_solicitud"):
+                    logger.warning(f"⚠️ Convocatoria {id_bdns} sin fechas de solicitud en detalle")
+                
+                nuevas_subvenciones.append({**parsed_base, **parsed_detalle})
+            except Exception as e:
+                logger.error(f"Error al obtener detalle de convocatoria {id_bdns}: {e}")
+                continue
+        
+        if len(convocatorias) < page_size:
+            break
+        page += 1
     
     return nuevas_subvenciones
 

@@ -111,7 +111,7 @@ class BDNSService:
         endpoint = f"{self.base_url}/convocatorias"
         params = {
             "vpd": "GE",
-            "numeroConvocatoria": id_bdns
+            "numConv": id_bdns
         }
         
         try:
@@ -194,43 +194,52 @@ class BDNSService:
     
     def parse_convocatoria(self, conv_data: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Parsear datos de convocatoria de BDNS a formato interno
-        
-        Args:
-            conv_data: Datos crudos de la API
-            
-        Returns:
-            Diccionario con datos parseados
+        Parsear datos de convocatoria del listado de BDNS a formato interno
         """
-        # Parsear fechas
-        def parse_date(date_str: Optional[str]) -> Optional[datetime]:
-            if not date_str:
-                return None
-            try:
-                # Formato: dd/mm/yyyy o timestamp
-                if '/' in date_str:
-                    return datetime.strptime(date_str, "%d/%m/%Y")
-                else:
-                    return datetime.fromtimestamp(int(date_str) / 1000)
-            except Exception:
-                return None
-        
         parsed = {
             "id_bdns": str(conv_data.get("numeroConvocatoria", "")),
             "titulo": conv_data.get("descripcion", ""),
             "descripcion": conv_data.get("objeto", ""),
-            "fecha_publicacion": parse_date(conv_data.get("fechaPublicacion")),
-            "fecha_inicio_solicitud": parse_date(conv_data.get("fechaInicio")),
-            "fecha_fin_solicitud": parse_date(conv_data.get("fechaFin")),
+            "fecha_publicacion": self._parse_date(conv_data.get("fechaRecepcion")) or self._parse_date(conv_data.get("fechaPublicacion")),
             "finalidad_id": conv_data.get("finalidad", {}).get("id"),
             "finalidad_nombre": conv_data.get("finalidad", {}).get("nombre"),
             "region_id": conv_data.get("region", {}).get("id"),
             "region_nombre": conv_data.get("region", {}).get("nombre"),
-            "organo_convocante": conv_data.get("organo", {}).get("nombre"),
+            "organo_convocante": conv_data.get("organo", {}).get("nombre") or conv_data.get("nivel3") or conv_data.get("nivel2"),
             "tipo_administracion": conv_data.get("tipoAdministracion"),
             "presupuesto_total": conv_data.get("presupuesto"),
             "url_bdns": f"https://www.infosubvenciones.es/bdnstrans/GE/es/convocatoria/{conv_data.get('numeroConvocatoria')}",
             "tipos_beneficiario": conv_data.get("tiposBeneficiario", []),
         }
-        
         return parsed
+    
+    def parse_convocatoria_detalle(self, detalle: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Parsear datos de ConvocatoriaDetalle según Swagger BDNS
+        """
+        convocatoria = detalle.get("convocatoria") if isinstance(detalle, dict) else None
+        data = convocatoria if isinstance(convocatoria, dict) else detalle
+        return {
+            "descripcion": data.get("descripcion") or data.get("descripcionLeng"),
+            "fecha_publicacion": self._parse_date(data.get("fechaRecepcion")),
+            "fecha_inicio_solicitud": self._parse_date(data.get("fechaInicioSolicitud")),
+            "fecha_fin_solicitud": self._parse_date(data.get("fechaFinSolicitud")),
+            "organo_convocante": (data.get("organo") or {}).get("nivel3") or (data.get("organo") or {}).get("nivel2"),
+            "presupuesto_total": data.get("presupuestoTotal"),
+            "finalidad_nombre": data.get("descripcionFinalidad"),
+            "tipos_beneficiario": data.get("tiposBeneficiarios"),
+        }
+    
+    def _parse_date(self, value: Optional[str]) -> Optional[datetime]:
+        if not value:
+            return None
+        try:
+            if "T" in value:
+                return datetime.fromisoformat(value)
+            if "-" in value:
+                return datetime.strptime(value, "%Y-%m-%d")
+            if "/" in value:
+                return datetime.strptime(value, "%d/%m/%Y")
+        except Exception:
+            return None
+        return None
