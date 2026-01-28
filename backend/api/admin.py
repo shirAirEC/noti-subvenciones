@@ -361,8 +361,8 @@ async def crear_eventos_calendar():
                     presupuesto=float(subvencion.presupuesto_total) if subvencion.presupuesto_total else None,
                     region=subvencion.region_nombre,
                     organo=subvencion.organo_convocante,
-                    url_bases_reguladoras=subvencion.url_bases_reguladoras,
-                    url_sede_electronica=subvencion.url_sede_electronica
+                    url_bases_reguladoras=getattr(subvencion, 'url_bases_reguladoras', None),
+                    url_sede_electronica=getattr(subvencion, 'url_sede_electronica', None)
                 )
                 
                 # Guardar ID del evento
