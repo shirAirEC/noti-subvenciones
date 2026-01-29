@@ -56,19 +56,33 @@ async function cargarFiltros() {
 // Poblar un select con opciones
 function poblarSelect(selectId, opciones) {
     const select = document.getElementById(selectId);
-    const defaultOption = select.querySelector('option[value=""]');
     
-    // Limpiar opciones existentes excepto la primera
+    if (!select) {
+        console.error(`Select con id "${selectId}" no encontrado`);
+        return;
+    }
+    
+    // Guardar el texto de la opción por defecto
+    const defaultText = select.querySelector('option[value=""]')?.textContent || 'Seleccionar...';
+    
+    // Limpiar todas las opciones
     select.innerHTML = '';
+    
+    // Recrear opción por defecto
+    const defaultOption = document.createElement('option');
+    defaultOption.value = '';
+    defaultOption.textContent = defaultText;
     select.appendChild(defaultOption);
     
-    // Añadir nuevas opciones
+    // Añadir nuevas opciones ordenadas
     opciones.forEach(opcion => {
         const option = document.createElement('option');
         option.value = opcion;
         option.textContent = opcion;
         select.appendChild(option);
     });
+    
+    console.log(`✓ Cargadas ${opciones.length} opciones en ${selectId}`);
 }
 
 // Cargar subvenciones con filtros

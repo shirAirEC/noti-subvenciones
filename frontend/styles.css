@@ -381,6 +381,36 @@ body {
     line-height: 1.6;
 }
 
+.info-box {
+    background: rgba(122, 59, 122, 0.08);
+    border: 1px solid var(--primary-light);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-md);
+    margin-top: var(--spacing-md);
+    text-align: left;
+}
+
+.info-box p {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--primary);
+    margin-bottom: 0.5rem;
+}
+
+.info-box ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.info-box li {
+    font-size: 0.9rem;
+    color: var(--dark);
+    padding: 0.25rem 0;
+    padding-left: 1.5rem;
+    position: relative;
+}
+
 .subscription-benefits {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -524,6 +554,21 @@ body {
 .info-card p {
     margin-bottom: var(--spacing-md);
     opacity: 0.95;
+}
+
+.calendar-note {
+    background: rgba(255, 255, 255, 0.15);
+    border-left: 3px solid rgba(255, 255, 255, 0.5);
+    padding: var(--spacing-sm);
+    margin: var(--spacing-md) 0;
+    border-radius: 4px;
+    text-align: left;
+}
+
+.calendar-note p {
+    font-size: 0.9rem;
+    margin: 0;
+    opacity: 1;
 }
 
 .info-card .btn {
