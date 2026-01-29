@@ -1,13 +1,14 @@
 """
 Endpoints de administración para inicialización del sistema
 """
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
+from sqlalchemy.orm import Session
 from loguru import logger
 import sys
 
 # Importar scripts de inicialización
 sys.path.insert(0, '/app')
-from database import SessionLocal, engine, Base
+from database import SessionLocal, engine, Base, get_db
 from models import Subvencion, Usuario, Suscripcion, NotificacionEnviada
 from models.catalogo import Region, AreaTematica, Finalidad
 from services.bdns_service import BDNSService
@@ -322,50 +323,59 @@ async def admin_status():
         db.close()
 
 
-@router.post("/ejecutar-migracion-filtros")
-async def ejecutar_migracion_filtros(db: Session = Depends(get_db)):
+@router.post("/ejecutar-migracion")
+async def ejecutar_migracion(db: Session = Depends(get_db)):
     """
-    Ejecutar migración para añadir columna filtros_json
+    Ejecutar migración completa para añadir todas las columnas necesarias
+    ⚠️ Ejecutar una sola vez después del deploy
     """
     try:
         from sqlalchemy import text
         
-        # Verificar si la columna ya existe
-        check_query = text("""
-            SELECT column_name 
-            FROM information_schema.columns 
-            WHERE table_name='suscripciones' 
-            AND column_name='filtros_json'
-        """)
+        logger.info("🔧 Iniciando migración de base de datos...")
         
-        result = db.execute(check_query).fetchone()
+        migration_queries = [
+            # Columnas para subvenciones
+            "ALTER TABLE subvenciones ADD COLUMN IF NOT EXISTS organo_nivel1 VARCHAR(300);",
+            "ALTER TABLE subvenciones ADD COLUMN IF NOT EXISTS organo_nivel2 VARCHAR(300);",
+            "ALTER TABLE subvenciones ADD COLUMN IF NOT EXISTS organo_nivel3 VARCHAR(300);",
+            "ALTER TABLE subvenciones ADD COLUMN IF NOT EXISTS tipo_convocatoria VARCHAR(200);",
+            "ALTER TABLE subvenciones ADD COLUMN IF NOT EXISTS instrumentos JSON;",
+            "ALTER TABLE subvenciones ADD COLUMN IF NOT EXISTS sectores JSON;",
+            
+            # Índices
+            "CREATE INDEX IF NOT EXISTS idx_subvenciones_organo_nivel1 ON subvenciones (organo_nivel1);",
+            "CREATE INDEX IF NOT EXISTS idx_subvenciones_organo_nivel2 ON subvenciones (organo_nivel2);",
+            "CREATE INDEX IF NOT EXISTS idx_subvenciones_organo_nivel3 ON subvenciones (organo_nivel3);",
+            "CREATE INDEX IF NOT EXISTS idx_subvenciones_tipo_convocatoria ON subvenciones (tipo_convocatoria);",
+            "CREATE INDEX IF NOT EXISTS idx_subvenciones_finalidad_nombre ON subvenciones (finalidad_nombre);",
+            
+            # Columna para suscripciones
+            "ALTER TABLE suscripciones ADD COLUMN IF NOT EXISTS filtros_json JSON;",
+        ]
         
-        if result:
-            return {
-                "status": "success",
-                "message": "La columna filtros_json ya existe",
-                "already_exists": True
-            }
+        results = []
+        for query in migration_queries:
+            try:
+                db.execute(text(query))
+                results.append({"query": query[:50] + "...", "status": "✓"})
+                logger.info(f"✓ {query[:60]}")
+            except Exception as e:
+                results.append({"query": query[:50] + "...", "status": f"✗ {str(e)}"})
+                logger.warning(f"⚠️ {query[:60]} - {e}")
         
-        # Añadir la columna
-        migration_query = text("""
-            ALTER TABLE suscripciones
-            ADD COLUMN filtros_json JSONB;
-        """)
-        
-        db.execute(migration_query)
         db.commit()
         
-        logger.info("✓ Migración ejecutada: columna filtros_json añadida")
+        logger.success("✅ Migración completada")
         
         return {
             "status": "success",
             "message": "Migración ejecutada exitosamente",
-            "column_added": True
+            "details": results
         }
         
     except Exception as e:
-        logger.error(f"Error al ejecutar migración: {e}")
+        logger.error(f"❌ Error al ejecutar migración: {e}")
         db.rollback()
         raise HTTPException(
             status_code=500,
