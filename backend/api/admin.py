@@ -381,3 +381,76 @@ async def ejecutar_migracion(db: Session = Depends(get_db)):
             status_code=500,
             detail=f"Error al ejecutar migración: {str(e)}"
         )
+
+
+@router.post("/actualizar-campos-subvenciones")
+async def actualizar_campos_subvenciones():
+    """
+    Actualiza las subvenciones existentes para rellenar los nuevos campos
+    ⚠️ Ejecutar después de la migración para poblar campos nuevos
+    """
+    db = SessionLocal()
+    
+    try:
+        logger.info("🔄 Iniciando actualización de campos de subvenciones existentes...")
+        
+        bdns = BDNSService()
+        
+        # Obtener todas las subvenciones activas que no tienen organo_nivel1
+        subvenciones = db.query(Subvencion).filter(
+            Subvencion.activa == True,
+            Subvencion.organo_nivel1 == None
+        ).all()
+        
+        logger.info(f"📦 {len(subvenciones)} subvenciones a actualizar")
+        
+        actualizadas = 0
+        errores = 0
+        
+        for subvencion in subvenciones:
+            try:
+                # Obtener detalle de BDNS
+                detalle = await bdns.get_convocatoria_detalle(subvencion.id_bdns)
+                parsed = bdns.parse_convocatoria_detalle(detalle)
+                
+                # Actualizar campos nuevos
+                subvencion.organo_nivel1 = parsed.get("organo_nivel1")
+                subvencion.organo_nivel2 = parsed.get("organo_nivel2")
+                subvencion.organo_nivel3 = parsed.get("organo_nivel3")
+                subvencion.tipo_convocatoria = parsed.get("tipo_convocatoria")
+                subvencion.instrumentos = parsed.get("instrumentos")
+                subvencion.sectores = parsed.get("sectores")
+                
+                db.add(subvencion)
+                actualizadas += 1
+                
+                if actualizadas % 10 == 0:
+                    db.commit()
+                    logger.info(f"  ✓ {actualizadas}/{len(subvenciones)} actualizadas")
+                
+            except Exception as e:
+                logger.error(f"  ✗ Error actualizando {subvencion.id_bdns}: {e}")
+                errores += 1
+                continue
+        
+        db.commit()
+        
+        logger.success(f"✅ Actualización completada: {actualizadas} actualizadas, {errores} errores")
+        
+        return {
+            "status": "success",
+            "message": f"Campos actualizados exitosamente",
+            "actualizadas": actualizadas,
+            "errores": errores,
+            "total": len(subvenciones)
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ Error al actualizar campos: {e}")
+        db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error al actualizar campos: {str(e)}"
+        )
+    finally:
+        db.close()
