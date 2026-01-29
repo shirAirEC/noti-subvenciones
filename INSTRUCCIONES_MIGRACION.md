@@ -11,7 +11,7 @@ Se añadieron los siguientes campos:
 - `sectores` (JSON) - Array con sectores económicos del beneficiario
 
 ### 2. **Nuevos endpoints de filtros**
-- `GET /api/subvenciones` - **Ahora filtra SOLO Canarias** + filtros avanzados
+- `GET /api/subvenciones` - Listado con filtros avanzados
 - `GET /api/subvenciones/valores/organos` - Valores únicos de órganos (3 niveles)
 - `GET /api/subvenciones/valores/tipos-convocatoria` - Tipos de convocatoria
 - `GET /api/subvenciones/valores/instrumentos` - Instrumentos de ayuda
@@ -27,8 +27,8 @@ Se añadieron los siguientes campos:
   - Finalidad (política de gasto)
   - Presupuesto mínimo
   - Palabras clave
-- **Solo Canarias** (fijo, no seleccionable)
-- Sin referencias a áreas temáticas ni regiones
+- Diseño limpio y directo
+- Vista previa en tiempo real
 
 ## 🗄️ Migración de Base de Datos
 
@@ -72,27 +72,31 @@ Debe mostrar 6 filas.
 
 Después de aplicar la migración, **es obligatorio volver a sincronizar** para llenar los nuevos campos:
 
-### Opción 1: Forzar sincronización inmediata (Recomendado)
-```bash
-curl -X POST https://noti-subvenciones-production.up.railway.app/admin/sync-now
-```
+### Borrar datos actuales y re-sincronizar
 
-### Opción 2: Vaciar BD y sincronizar desde cero
 ```sql
--- PRECAUCIÓN: Esto borra todas las subvenciones
+-- PRECAUCIÓN: Esto borra todas las subvenciones y eventos
 TRUNCATE TABLE subvenciones CASCADE;
 ```
-Luego esperar la sincronización automática diaria (08:00) o usar Opción 1.
+
+Luego esperar la sincronización automática diaria (08:00) o forzar con:
+
+```bash
+# Desde terminal con acceso a Railway
+# (Esto requeriría crear un endpoint admin, no implementado aún)
+```
+
+**Recomendado**: Simplemente esperar a la próxima sincronización automática (08:00 diaria).
 
 ## 📝 Notas Técnicas
 
-1. **Filtro automático de Canarias**: El endpoint `/api/subvenciones` filtra automáticamente solo convocatorias de Canarias (en `region_nombre` u `organo_nivel1`)
+1. **Filtros aplicados en backend**: Los filtros por `tipo_convocatoria`, `instrumento`, `sector` y `finalidad` se aplican sobre los datos en la BD, **NO en la API de BDNS**
 
-2. **Filtros aplicados en backend**: Los filtros por `tipo_convocatoria`, `instrumento`, `sector` y `finalidad` se aplican sobre los datos en la BD, **NO en la API de BDNS**
+2. **Arrays JSON**: Los campos `instrumentos` y `sectores` son arrays JSON. La búsqueda se hace con `CAST(... AS String)` para buscar texto dentro del array
 
-3. **Arrays JSON**: Los campos `instrumentos` y `sectores` son arrays JSON. La búsqueda se hace con `CAST(... AS String)` para buscar texto dentro del array
+3. **Jerarquía de órganos**: Se almacenan los 3 niveles para permitir búsquedas flexibles. El filtro `organo_nivel` busca en los 3 niveles simultáneamente
 
-4. **Jerarquía de órganos**: Se almacenan los 3 niveles para permitir búsquedas flexibles. El filtro `organo_nivel` busca en los 3 niveles simultáneamente
+4. **Región**: El sistema sincroniza España y Canarias según los filtros configurados en el sync. Los usuarios pueden filtrar por órgano para enfocarse en sus regiones de interés.
 
 ## ✅ Verificación Post-Migración
 
@@ -111,13 +115,7 @@ SELECT COUNT(*) FROM subvenciones WHERE tipo_convocatoria IS NOT NULL;
 SELECT COUNT(*) FROM subvenciones WHERE instrumentos IS NOT NULL;
 ```
 
-3. **Test de filtro Canarias**:
-```sql
-SELECT COUNT(*) FROM subvenciones 
-WHERE region_nombre ILIKE '%CANARIAS%' OR organo_nivel1 ILIKE '%CANARIAS%';
-```
-
-4. **Endpoints funcionando**:
+3. **Endpoints funcionando**:
    - https://noti-subvenciones-production.up.railway.app/api/subvenciones
    - https://noti-subvenciones-production.up.railway.app/api/subvenciones/valores/organos
 
