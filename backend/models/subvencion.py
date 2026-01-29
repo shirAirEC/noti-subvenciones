@@ -27,9 +27,19 @@ class Subvencion(Base):
     region_id = Column(Integer)
     region_nombre = Column(String(200))
     
-    # Organismo
-    organo_convocante = Column(String(300))
+    # Organismo (3 niveles jerárquicos)
+    organo_nivel1 = Column(String(300))  # Ej: CANARIAS
+    organo_nivel2 = Column(String(300))  # Ej: CONSEJERÍA DE...
+    organo_nivel3 = Column(String(300))  # Ej: DIRECCIÓN GENERAL DE...
+    organo_convocante = Column(String(300))  # El más específico disponible
     tipo_administracion = Column(String(10))
+    
+    # Tipo de convocatoria y ayuda
+    tipo_convocatoria = Column(String(200))  # Ej: "Concurrencia competitiva"
+    instrumentos = Column(JSON)  # Lista de instrumentos de ayuda
+    
+    # Sectores
+    sectores = Column(JSON)  # Sectores económicos del beneficiario
     
     # Presupuesto
     presupuesto_total = Column(Numeric(15, 2))
@@ -37,6 +47,8 @@ class Subvencion(Base):
     # Enlaces
     url_bdns = Column(String(500))
     url_convocatoria = Column(String(500))
+    url_bases_reguladoras = Column(String(500))
+    url_sede_electronica = Column(String(500))
     
     # Beneficiarios
     tipos_beneficiario = Column(JSON)  # Lista de tipos de beneficiarios
