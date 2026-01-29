@@ -33,48 +33,6 @@ async def lifespan(app: FastAPI):
     """Eventos de inicio y cierre de la aplicación"""
     logger.info("🚀 Iniciando aplicación...")
     
-    # Ejecutar migraciones automáticas
-    try:
-        from database import engine
-        from sqlalchemy import text, inspect
-        
-        with engine.connect() as conn:
-            inspector = inspect(engine)
-            columns = [col['name'] for col in inspector.get_columns('subvenciones')]
-            
-            # Verificar si faltan columnas de la migración
-            nuevas_columnas = ['organo_nivel1', 'organo_nivel2', 'organo_nivel3', 
-                              'tipo_convocatoria', 'instrumentos', 'sectores']
-            columnas_faltantes = [col for col in nuevas_columnas if col not in columns]
-            
-            if columnas_faltantes:
-                logger.info(f"🔧 Ejecutando migración automática para: {columnas_faltantes}")
-                
-                queries = [
-                    "ALTER TABLE subvenciones ADD COLUMN IF NOT EXISTS organo_nivel1 VARCHAR(300);",
-                    "ALTER TABLE subvenciones ADD COLUMN IF NOT EXISTS organo_nivel2 VARCHAR(300);",
-                    "ALTER TABLE subvenciones ADD COLUMN IF NOT EXISTS organo_nivel3 VARCHAR(300);",
-                    "ALTER TABLE subvenciones ADD COLUMN IF NOT EXISTS tipo_convocatoria VARCHAR(200);",
-                    "ALTER TABLE subvenciones ADD COLUMN IF NOT EXISTS instrumentos JSON;",
-                    "ALTER TABLE subvenciones ADD COLUMN IF NOT EXISTS sectores JSON;",
-                    "CREATE INDEX IF NOT EXISTS idx_subvenciones_organo_nivel1 ON subvenciones (organo_nivel1);",
-                    "CREATE INDEX IF NOT EXISTS idx_subvenciones_organo_nivel2 ON subvenciones (organo_nivel2);",
-                    "CREATE INDEX IF NOT EXISTS idx_subvenciones_organo_nivel3 ON subvenciones (organo_nivel3);",
-                    "CREATE INDEX IF NOT EXISTS idx_subvenciones_tipo_convocatoria ON subvenciones (tipo_convocatoria);",
-                    "CREATE INDEX IF NOT EXISTS idx_subvenciones_finalidad_nombre ON subvenciones (finalidad_nombre);",
-                ]
-                
-                for query in queries:
-                    conn.execute(text(query))
-                    conn.commit()
-                
-                logger.success("✅ Migración completada automáticamente")
-            else:
-                logger.info("✓ Todas las columnas ya existen")
-                
-    except Exception as e:
-        logger.warning(f"⚠️ Error en migración automática: {e}")
-    
     # Configurar credenciales desde variable de entorno (Railway/Cloud)
     try:
         from scripts.setup_credentials import setup_credentials
