@@ -11,7 +11,6 @@ from database import SessionLocal, engine, Base
 from models import Subvencion, Usuario, Suscripcion, NotificacionEnviada
 from models.catalogo import Region, AreaTematica, Finalidad
 from services.bdns_service import BDNSService
-from services.calendar_service import CalendarService
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
@@ -319,80 +318,5 @@ async def admin_status():
                 "2. POST /admin/populate-catalogs - Poblar catálogos"
             ]
         }
-    finally:
-        db.close()
-
-
-@router.post("/crear-eventos-calendar")
-async def crear_eventos_calendar():
-    """
-    Crear eventos de Google Calendar para subvenciones existentes que no tienen evento
-    """
-    db = SessionLocal()
-    
-    try:
-        # Obtener subvenciones sin evento de Calendar
-        subvenciones = db.query(Subvencion).filter(
-            Subvencion.calendar_event_id == None,
-            Subvencion.fecha_fin_solicitud != None
-        ).all()
-        
-        if not subvenciones:
-            return {
-                "status": "success",
-                "message": "Todas las subvenciones ya tienen eventos de Calendar",
-                "eventos_creados": 0
-            }
-        
-        logger.info(f"📅 Creando eventos para {len(subvenciones)} subvenciones...")
-        
-        calendar_service = CalendarService()
-        eventos_creados = 0
-        errores = []
-        
-        for subvencion in subvenciones:
-            try:
-                event_id = calendar_service.create_event(
-                    titulo=subvencion.titulo,
-                    descripcion=subvencion.descripcion or "",
-                    fecha_inicio=subvencion.fecha_inicio_solicitud or subvencion.fecha_fin_solicitud,
-                    fecha_fin=subvencion.fecha_fin_solicitud,
-                    url_bdns=subvencion.url_bdns,
-                    presupuesto=float(subvencion.presupuesto_total) if subvencion.presupuesto_total else None,
-                    region=subvencion.region_nombre,
-                    organo=subvencion.organo_convocante,
-                    url_bases_reguladoras=getattr(subvencion, 'url_bases_reguladoras', None),
-                    url_sede_electronica=getattr(subvencion, 'url_sede_electronica', None)
-                )
-                
-                # Guardar ID del evento
-                subvencion.calendar_event_id = event_id
-                eventos_creados += 1
-                
-                logger.info(f"  ✅ {subvencion.id_bdns}: {subvencion.titulo[:60]}")
-                
-            except Exception as e:
-                error_msg = f"{subvencion.id_bdns}: {str(e)}"
-                errores.append(error_msg)
-                logger.error(f"  ❌ Error {error_msg}")
-                continue
-        
-        db.commit()
-        
-        return {
-            "status": "success",
-            "message": f"{eventos_creados} eventos creados exitosamente",
-            "eventos_creados": eventos_creados,
-            "total_procesadas": len(subvenciones),
-            "errores": errores[:10] if errores else []  # Solo primeros 10 errores
-        }
-        
-    except Exception as e:
-        logger.error(f"❌ Error al crear eventos: {e}")
-        db.rollback()
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error al crear eventos de Calendar: {str(e)}"
-        )
     finally:
         db.close()

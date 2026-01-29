@@ -98,9 +98,7 @@ class CalendarService:
         url_bdns: str,
         presupuesto: Optional[float] = None,
         region: Optional[str] = None,
-        organo: Optional[str] = None,
-        url_bases_reguladoras: Optional[str] = None,
-        url_sede_electronica: Optional[str] = None
+        organo: Optional[str] = None
     ) -> str:
         """
         Crear evento de subvención en el calendario
@@ -130,15 +128,7 @@ class CalendarService:
         if presupuesto:
             description_parts.append(f"\n💰 Presupuesto: {presupuesto:,.2f} €")
         
-        description_parts.append(f"\n\n🔗 ENLACES:")
-        description_parts.append(f"\n• Ficha BDNS: {url_bdns}")
-        
-        if url_bases_reguladoras:
-            description_parts.append(f"\n• Bases reguladoras: {url_bases_reguladoras}")
-        
-        if url_sede_electronica:
-            description_parts.append(f"\n• Sede electrónica: {url_sede_electronica}")
-        
+        description_parts.append(f"\n\n🔗 Más información: {url_bdns}")
         description_parts.append(f"\n\n⚠️ IMPORTANTE: Fecha límite de solicitud")
         
         full_description = "".join(description_parts)
@@ -158,11 +148,12 @@ class CalendarService:
             'reminders': {
                 'useDefault': False,
                 'overrides': [
-                    {'method': 'email', 'minutes': 7 * 24 * 60},   # 7 días antes
-                    {'method': 'email', 'minutes': 3 * 24 * 60},   # 3 días antes
-                    {'method': 'popup', 'minutes': 1 * 24 * 60},   # 1 día antes
-                    {'method': 'email', 'minutes': 1 * 24 * 60},   # 1 día antes
-                    {'method': 'popup', 'minutes': 2 * 60},        # 2 horas antes
+                    {'method': 'email', 'minutes': 7 * 24 * 60},  # 7 días antes
+                    {'method': 'popup', 'minutes': 7 * 24 * 60},
+                    {'method': 'email', 'minutes': 3 * 24 * 60},  # 3 días antes
+                    {'method': 'popup', 'minutes': 3 * 24 * 60},
+                    {'method': 'email', 'minutes': 1 * 24 * 60},  # 1 día antes
+                    {'method': 'popup', 'minutes': 1 * 24 * 60},
                 ],
             },
             'colorId': '9',  # Azul para subvenciones
