@@ -1,229 +1,231 @@
-// Configuración de la API
-const API_BASE_URL = window.API_BASE_URL || 'https://noti-subvenciones-production.up.railway.app';
+/**
+ * Frontend JavaScript - Sistema de Notificaciones de Subvenciones
+ */
 
-// Estado de la aplicación
-let filtrosDisponibles = {
-    organos: [],
-    tiposConvocatoria: [],
-    instrumentos: [],
-    sectores: [],
-    finalidades: []
-};
+// Configuración - usar config.js para detectar automáticamente el entorno
+const API_BASE_URL = window.APP_CONFIG?.API_BASE_URL || 'http://localhost:8000';
 
-// Inicialización
+// Elementos del DOM
+const form = document.getElementById('subscriptionForm');
+const submitBtn = document.getElementById('submitBtn');
+const responseMessage = document.getElementById('responseMessage');
+const calendarLink = document.getElementById('calendarLink');
+
+/**
+ * Inicializar aplicación
+ */
 document.addEventListener('DOMContentLoaded', async () => {
-    await cargarFiltros();
-    await cargarSubvenciones();
+    console.log('🚀 Aplicación iniciada');
     
-    // Event listeners
-    document.getElementById('filtersForm').addEventListener('submit', handleSearch);
-    document.getElementById('clearBtn').addEventListener('click', handleClear);
+    // Cargar catálogos
+    await cargarCatalogos();
     
-    // Cargar URL del calendario
-    cargarCalendarLink();
+    // Configurar formulario
+    form.addEventListener('submit', handleSubmit);
+    
+    // Configurar enlaces de calendario
+    // TODO: Obtener URL real del calendario desde API
+    if (calendarLink) {
+        calendarLink.href = '#';
+    }
 });
 
-// Cargar opciones de filtros desde la API
-async function cargarFiltros() {
+/**
+ * Cargar catálogos desde API
+ */
+async function cargarCatalogos() {
     try {
-        const [organos, tipos, instrumentos, sectores, finalidades] = await Promise.all([
-            fetch(`${API_BASE_URL}/api/subvenciones/valores/organos`).then(r => r.json()),
-            fetch(`${API_BASE_URL}/api/subvenciones/valores/tipos-convocatoria`).then(r => r.json()),
-            fetch(`${API_BASE_URL}/api/subvenciones/valores/instrumentos`).then(r => r.json()),
-            fetch(`${API_BASE_URL}/api/subvenciones/valores/sectores`).then(r => r.json()),
-            fetch(`${API_BASE_URL}/api/subvenciones/valores/finalidades`).then(r => r.json())
-        ]);
-        
-        filtrosDisponibles = { organos, tiposConvocatoria: tipos, instrumentos, sectores, finalidades };
-        
-        // Poblar los selects
-        poblarSelect('organo', organos);
-        poblarSelect('tipo_convocatoria', tipos);
-        poblarSelect('instrumento', instrumentos);
-        poblarSelect('sector', sectores);
-        poblarSelect('finalidad', finalidades);
-        
-    } catch (error) {
-        console.error('Error al cargar filtros:', error);
-        mostrarError('No se pudieron cargar los filtros. Por favor, recarga la página.');
-    }
-}
-
-// Poblar un select con opciones
-function poblarSelect(selectId, opciones) {
-    const select = document.getElementById(selectId);
-    const defaultOption = select.querySelector('option[value=""]');
-    
-    // Limpiar opciones existentes excepto la primera
-    select.innerHTML = '';
-    select.appendChild(defaultOption);
-    
-    // Añadir nuevas opciones
-    opciones.forEach(opcion => {
-        const option = document.createElement('option');
-        option.value = opcion;
-        option.textContent = opcion;
-        select.appendChild(option);
-    });
-}
-
-// Cargar subvenciones con filtros
-async function cargarSubvenciones(filtros = {}) {
-    const loadingIndicator = document.getElementById('loadingIndicator');
-    const resultsContainer = document.getElementById('resultsContainer');
-    const noResults = document.getElementById('noResults');
-    const resultsCount = document.getElementById('resultsCount');
-    
-    // Mostrar loading
-    loadingIndicator.style.display = 'block';
-    resultsContainer.style.display = 'none';
-    noResults.style.display = 'none';
-    
-    try {
-        // Construir query params
-        const params = new URLSearchParams();
-        params.append('limit', '50');
-        params.append('activa', 'true');
-        
-        Object.entries(filtros).forEach(([key, value]) => {
-            if (value) params.append(key, value);
-        });
-        
-        const response = await fetch(`${API_BASE_URL}/api/subvenciones?${params}`);
-        const subvenciones = await response.json();
-        
-        // Ocultar loading
-        loadingIndicator.style.display = 'none';
-        
-        if (subvenciones.length === 0) {
-            noResults.style.display = 'block';
-            resultsCount.textContent = '0 resultados';
-        } else {
-            resultsContainer.style.display = 'block';
-            resultsCount.textContent = `${subvenciones.length} resultado${subvenciones.length !== 1 ? 's' : ''}`;
-            renderizarSubvenciones(subvenciones);
+        // Cargar regiones
+        const regiones = await fetchAPI('/api/regiones');
+        if (regiones && regiones.length > 0) {
+            actualizarRegiones(regiones);
         }
         
+        // Cargar áreas temáticas
+        const areas = await fetchAPI('/api/areas');
+        if (areas && areas.length > 0) {
+            actualizarAreas(areas);
+        }
     } catch (error) {
-        console.error('Error al cargar subvenciones:', error);
-        loadingIndicator.style.display = 'none';
-        mostrarError('Error al cargar las subvenciones. Por favor, inténtalo de nuevo.');
+        console.warn('No se pudieron cargar los catálogos:', error);
     }
 }
 
-// Renderizar lista de subvenciones
-function renderizarSubvenciones(subvenciones) {
-    const container = document.getElementById('resultsContainer');
-    container.innerHTML = '';
+/**
+ * Actualizar checkboxes de regiones
+ */
+function actualizarRegiones(regiones) {
+    const regionesGroup = document.getElementById('regionesGroup');
+    regionesGroup.innerHTML = '';
     
-    subvenciones.forEach(sub => {
-        const card = crearCardSubvencion(sub);
-        container.appendChild(card);
+    regiones.forEach(region => {
+        const label = document.createElement('label');
+        label.className = 'checkbox-label';
+        label.innerHTML = `
+            <input type="checkbox" name="regiones" value="${region.id}">
+            <span>${region.nombre}</span>
+        `;
+        regionesGroup.appendChild(label);
     });
 }
 
-// Crear card de subvención
-function crearCardSubvencion(sub) {
-    const card = document.createElement('div');
-    card.className = 'subvencion-card';
+/**
+ * Actualizar checkboxes de áreas temáticas
+ */
+function actualizarAreas(areas) {
+    const areasGroup = document.getElementById('areasGroup');
+    areasGroup.innerHTML = '';
     
-    // Formatear fechas
-    const fechaInicio = sub.fecha_inicio_solicitud ? formatearFecha(sub.fecha_inicio_solicitud) : null;
-    const fechaFin = sub.fecha_fin_solicitud ? formatearFecha(sub.fecha_fin_solicitud) : 'No especificada';
-    
-    // Formatear presupuesto
-    const presupuesto = sub.presupuesto_total ? formatearPresupuesto(sub.presupuesto_total) : 'No especificado';
-    
-    card.innerHTML = `
-        <div class="subvencion-header">
-            <h4 class="subvencion-title">${sub.titulo || 'Sin título'}</h4>
-            <div class="subvencion-meta">
-                ${sub.organo_convocante ? `<span class="meta-item">🏛️ ${sub.organo_convocante}</span>` : ''}
-                ${fechaFin !== 'No especificada' ? `<span class="meta-item">📅 Plazo: ${fechaFin}</span>` : ''}
-                ${presupuesto !== 'No especificado' ? `<span class="meta-item">💰 ${presupuesto}</span>` : ''}
-            </div>
-        </div>
-        
-        <div class="subvencion-body">
-            ${sub.descripcion ? `<p class="subvencion-description">${truncarTexto(sub.descripcion, 200)}</p>` : ''}
-            
-            <div class="subvencion-tags">
-                ${sub.tipo_convocatoria ? `<span class="tag">📋 ${sub.tipo_convocatoria}</span>` : ''}
-                ${sub.finalidad_nombre ? `<span class="tag">🎯 ${sub.finalidad_nombre}</span>` : ''}
-                ${sub.region_nombre ? `<span class="tag">📍 ${sub.region_nombre}</span>` : ''}
-            </div>
-        </div>
-        
-        <div class="subvencion-footer">
-            ${sub.url_bdns ? `<a href="${sub.url_bdns}" target="_blank" class="btn btn-primary btn-small">Ver en BDNS</a>` : ''}
-            ${sub.url_bases_reguladoras ? `<a href="${sub.url_bases_reguladoras}" target="_blank" class="btn btn-secondary btn-small">Bases Reguladoras</a>` : ''}
-            ${sub.url_sede_electronica ? `<a href="${sub.url_sede_electronica}" target="_blank" class="btn btn-secondary btn-small">Sede Electrónica</a>` : ''}
-        </div>
-    `;
-    
-    return card;
+    areas.forEach(area => {
+        const label = document.createElement('label');
+        label.className = 'checkbox-label';
+        label.innerHTML = `
+            <input type="checkbox" name="areas" value="${area.id}">
+            <span>${area.nombre}</span>
+        `;
+        areasGroup.appendChild(label);
+    });
 }
 
-// Manejar búsqueda
-function handleSearch(e) {
+/**
+ * Manejar envío del formulario
+ */
+async function handleSubmit(e) {
     e.preventDefault();
     
-    const formData = new FormData(e.target);
-    const filtros = {};
+    // Deshabilitar botón
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="loading"></span> Procesando...';
     
-    formData.forEach((value, key) => {
-        if (value) filtros[key] = value;
-    });
+    // Ocultar mensajes anteriores
+    responseMessage.style.display = 'none';
     
-    cargarSubvenciones(filtros);
-}
-
-// Limpiar filtros
-function handleClear() {
-    document.getElementById('filtersForm').reset();
-    cargarSubvenciones();
-}
-
-// Cargar link del calendario
-async function cargarCalendarLink() {
     try {
-        const response = await fetch(`${API_BASE_URL}/api/calendar/url`);
-        const data = await response.json();
+        // Recopilar datos del formulario
+        const formData = {
+            email: document.getElementById('email').value.trim(),
+            nombre: document.getElementById('nombre').value.trim() || null,
+            regiones: getSelectedValues('regiones'),
+            areas_tematicas: getSelectedValues('areas'),
+            presupuesto_min: parseFloat(document.getElementById('presupuesto_min').value) || null,
+            presupuesto_max: parseFloat(document.getElementById('presupuesto_max').value) || null,
+        };
         
-        if (data.url) {
-            document.getElementById('calendarLink').href = data.url;
+        // Validar datos
+        if (!formData.email) {
+            throw new Error('El email es obligatorio');
         }
+        
+        // Enviar a API
+        const response = await fetchAPI('/api/suscripcion/crear', {
+            method: 'POST',
+            body: JSON.stringify(formData),
+        });
+        
+        // Mostrar mensaje de éxito
+        showMessage(
+            `✅ ¡Suscripción creada! Revisa tu email para confirmar. 
+            <br><br>
+            <a href="${response.calendar_url}" target="_blank">Ver Calendario</a>`,
+            'success'
+        );
+        
+        // Limpiar formulario
+        form.reset();
+        
     } catch (error) {
-        console.error('Error al cargar URL del calendario:', error);
+        console.error('Error al crear suscripción:', error);
+        showMessage(
+            `❌ Error: ${error.message}`,
+            'error'
+        );
+    } finally {
+        // Rehabilitar botón
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Suscribirme';
     }
 }
 
-// Utilidades
-function formatearFecha(fecha) {
-    const date = new Date(fecha);
-    return date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+/**
+ * Obtener valores seleccionados de checkboxes
+ */
+function getSelectedValues(name) {
+    const checkboxes = document.querySelectorAll(`input[name="${name}"]:checked`);
+    const values = Array.from(checkboxes).map(cb => {
+        const value = cb.value;
+        // Convertir a número si es posible
+        return isNaN(value) ? value : parseInt(value);
+    });
+    return values.length > 0 ? values : null;
 }
 
-function formatearPresupuesto(cantidad) {
-    return new Intl.NumberFormat('es-ES', {
-        style: 'currency',
-        currency: 'EUR',
-        maximumFractionDigits: 0
-    }).format(cantidad);
+/**
+ * Mostrar mensaje de respuesta
+ */
+function showMessage(message, type) {
+    responseMessage.innerHTML = message;
+    responseMessage.className = `response-message ${type}`;
+    responseMessage.style.display = 'block';
+    
+    // Scroll al mensaje
+    responseMessage.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
-function truncarTexto(texto, maxLength) {
-    if (!texto) return '';
-    if (texto.length <= maxLength) return texto;
-    return texto.substring(0, maxLength) + '...';
+/**
+ * Realizar petición a la API
+ */
+async function fetchAPI(endpoint, options = {}) {
+    // Asegurar que no haya doble barra en la URL
+    const baseUrl = API_BASE_URL.endsWith('/') ? API_BASE_URL.slice(0, -1) : API_BASE_URL;
+    const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    const url = `${baseUrl}${cleanEndpoint}`;
+    
+    const config = {
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers,
+        },
+        ...options,
+    };
+    
+    try {
+        const response = await fetch(url, config);
+        
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.detail || `Error HTTP ${response.status}`);
+        }
+        
+        return await response.json();
+    } catch (error) {
+        console.error('Error en petición API:', error);
+        throw error;
+    }
 }
 
-function mostrarError(mensaje) {
-    const resultsContainer = document.getElementById('resultsContainer');
-    resultsContainer.innerHTML = `
-        <div class="no-results">
-            <p>⚠️ ${mensaje}</p>
-        </div>
-    `;
-    resultsContainer.style.display = 'block';
+/**
+ * Manejar confirmación de suscripción desde URL
+ */
+const urlParams = new URLSearchParams(window.location.search);
+const token = urlParams.get('token');
+
+if (token) {
+    // Confirmar suscripción automáticamente
+    (async () => {
+        try {
+            await fetchAPI(`/api/suscripcion/confirmar?token=${token}`, {
+                method: 'POST',
+            });
+            
+            showMessage(
+                '✅ ¡Suscripción confirmada! Ya estás recibiendo notificaciones.',
+                'success'
+            );
+        } catch (error) {
+            showMessage(
+                `❌ Error al confirmar suscripción: ${error.message}`,
+                'error'
+            );
+        }
+    })();
 }
