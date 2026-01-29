@@ -113,12 +113,75 @@
                 </div>
             </section>
 
+            <!-- Subscription Section -->
+            <section class="subscription-section">
+                <div class="subscription-card">
+                    <div class="subscription-header">
+                        <h3>🔔 Recibe Notificaciones Personalizadas</h3>
+                        <p>
+                            Suscríbete para recibir alertas automáticas por email cuando aparezcan nuevas subvenciones 
+                            que coincidan con tus intereses, además de recordatorios del calendario antes de los plazos.
+                        </p>
+                    </div>
+
+                    <div class="subscription-benefits">
+                        <div class="benefit-item">
+                            <span class="benefit-icon">✉️</span>
+                            <div class="benefit-content">
+                                <h4>Notificaciones por Email</h4>
+                                <p>Recibe un email cada vez que se publique una nueva convocatoria que coincida con tus filtros</p>
+                            </div>
+                        </div>
+                        <div class="benefit-item">
+                            <span class="benefit-icon">📅</span>
+                            <div class="benefit-content">
+                                <h4>Recordatorios de Calendario</h4>
+                                <p>Notificaciones automáticas 7, 3 y 1 día antes de la fecha límite de solicitud</p>
+                            </div>
+                        </div>
+                        <div class="benefit-item">
+                            <span class="benefit-icon">🔄</span>
+                            <div class="benefit-content">
+                                <h4>Actualizaciones en Tiempo Real</h4>
+                                <p>Te avisamos si cambian las fechas o se añaden nuevos documentos a una convocatoria</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form id="subscriptionForm" class="subscription-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="sub_nombre">Nombre (opcional)</label>
+                                <input type="text" id="sub_nombre" name="nombre" placeholder="Tu nombre">
+                            </div>
+                            <div class="form-group">
+                                <label for="sub_email">Email <span class="required">*</span></label>
+                                <input type="email" id="sub_email" name="email" placeholder="tu@email.com" required>
+                            </div>
+                        </div>
+
+                        <div class="form-note">
+                            <p>💡 <strong>Tip:</strong> Puedes usar los mismos filtros que aplicaste arriba. La suscripción se creará con tus preferencias actuales.</p>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary btn-large" id="subscribeBtn">
+                                <span>🔔</span> Suscribirme Ahora
+                            </button>
+                        </div>
+
+                        <div id="subscriptionMessage" class="subscription-message" style="display: none;"></div>
+                    </form>
+                </div>
+            </section>
+
             <!-- Calendar Link -->
             <section class="calendar-section">
                 <div class="info-card">
-                    <h3>📅 Calendario de Subvenciones</h3>
+                    <h3>📅 Calendario Público de Subvenciones</h3>
                     <p>
-                        Todas las convocatorias se añaden automáticamente a un calendario compartido de Google Calendar.
+                        Accede al calendario compartido con todas las convocatorias. Puedes añadirlo a tu Google Calendar 
+                        y recibirás recordatorios automáticos antes de cada fecha límite.
                     </p>
                     <a href="#" id="calendarLink" class="btn btn-primary" target="_blank">
                         <span>📆</span> Ver Calendario Completo
