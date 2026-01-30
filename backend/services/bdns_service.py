@@ -219,15 +219,29 @@ class BDNSService:
         """
         convocatoria = detalle.get("convocatoria") if isinstance(detalle, dict) else None
         data = convocatoria if isinstance(convocatoria, dict) else detalle
+        
+        organo = data.get("organo") or {}
+        
         return {
             "descripcion": data.get("descripcion") or data.get("descripcionLeng"),
             "fecha_publicacion": self._parse_date(data.get("fechaRecepcion")),
             "fecha_inicio_solicitud": self._parse_date(data.get("fechaInicioSolicitud")),
             "fecha_fin_solicitud": self._parse_date(data.get("fechaFinSolicitud")),
-            "organo_convocante": (data.get("organo") or {}).get("nivel3") or (data.get("organo") or {}).get("nivel2"),
+            # Órgano convocante (niveles jerárquicos)
+            "organo_nivel1": organo.get("nivel1"),
+            "organo_nivel2": organo.get("nivel2"),
+            "organo_nivel3": organo.get("nivel3"),
+            "organo_convocante": organo.get("nivel3") or organo.get("nivel2") or organo.get("nivel1"),
+            # Otros campos
             "presupuesto_total": data.get("presupuestoTotal"),
             "finalidad_nombre": data.get("descripcionFinalidad"),
             "tipos_beneficiario": data.get("tiposBeneficiarios"),
+            "tipo_convocatoria": data.get("tipoConvocatoria"),
+            "instrumentos": data.get("instrumentos"),
+            "sectores": data.get("sectores"),
+            "url_bases_reguladoras": data.get("urlBasesReguladoras"),
+            "url_sede_electronica": data.get("sedeElectronica"),
+            "documentos": data.get("documentos", []),
         }
     
     def _parse_date(self, value: Optional[str]) -> Optional[datetime]:
