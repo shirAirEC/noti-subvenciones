@@ -1,0 +1,12 @@
+{
+  "name": "noti-subvenciones-frontend",
+  "version": "1.0.0",
+  "description": "Frontend estático para el sistema de notificaciones de subvenciones",
+  "scripts": {
+    "build": "echo 'No build needed - static site'",
+    "start": "echo 'Use a static server to serve files'"
+  },
+  "keywords": ["subvenciones", "bdns", "ull"],
+  "author": "ARTE Consultores",
+  "license": "ISC"
+}
